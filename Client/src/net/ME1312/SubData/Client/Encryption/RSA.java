@@ -1,14 +1,16 @@
 package net.ME1312.SubData.Client.Encryption;
 
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
+import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.CipherFactory;
+import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
+import net.ME1312.SubData.Client.Library.Exception.EndOfStreamException;
 
 import javax.crypto.Cipher;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -21,7 +23,8 @@ import java.util.HashMap;
 public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactory {
 
     // Supported Forward Ciphers
-    private static final HashMap<String, Util.ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>>> forward = new HashMap<String, Util.ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>>>();
+    private static final HashMap<String, ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>>>();
+    private static final HashMap<String, ReturnCallback<String, net.ME1312.SubData.Client.Cipher>> forwardP = new HashMap<String, ReturnCallback<String, net.ME1312.SubData.Client.Cipher>>();
 
     // RSA specification
     private static final String CIPHER_SPEC = "RSA/ECB/PKCS1Padding";
@@ -33,10 +36,10 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
     private final PublicKey publicKey;
 
     static {
-        forward.put("AES", () -> AES.random(128));
-        forward.put("AES-128", () -> AES.random(128));
-        forward.put("AES-192", () -> AES.random(192));
-        forward.put("AES-256", () -> AES.random(256));
+        addCipher("AES", () -> AES.random(128), key -> new AES(128, key));
+        addCipher("AES-128", () -> AES.random(128), key -> new AES(128, key));
+        addCipher("AES-192", () -> AES.random(192), key -> new AES(192, key));
+        addCipher("AES-256", () -> AES.random(256), key -> new AES(256, key));
     }
 
     @Override
@@ -95,52 +98,69 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
 
     @Override
     public void encrypt(InputStream in, OutputStream out) throws Exception {
-        // initialize RSA encryption
-        Cipher ci = Cipher.getInstance(CIPHER_SPEC);
-        ci.init(Cipher.ENCRYPT_MODE, (privateKey != null)?privateKey:publicKey);
+        try {
+            // initialize RSA encryption
+            Cipher ci = Cipher.getInstance(CIPHER_SPEC);
+            ci.init(Cipher.ENCRYPT_MODE, (privateKey != null) ? privateKey : publicKey);
 
-        // read data from input into buffer, encrypt and write to output
-        byte[] ibuf = new byte[BUFFER_SIZE];
-        int len;
-        while ((len = in.read(ibuf)) != -1) {
-            byte[] obuf = ci.update(ibuf, 0, len);
+            // read data from input into buffer, encrypt and write to output
+            byte[] ibuf = new byte[BUFFER_SIZE];
+            int len;
+            while ((len = in.read(ibuf)) != -1) {
+                byte[] obuf = ci.update(ibuf, 0, len);
+                if (obuf != null) out.write(obuf);
+            }
+            byte[] obuf = ci.doFinal();
             if (obuf != null) out.write(obuf);
+        } catch (SocketException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new EncryptionException(e, "Could not encrypt data");
         }
-        byte[] obuf = ci.doFinal();
-        if (obuf != null) out.write(obuf);
     }
 
     @Override
     public void decrypt(InputStream in, OutputStream out) throws Exception {
-        // initialize RSA encryption
-        Cipher ci = Cipher.getInstance(CIPHER_SPEC);
-        ci.init(Cipher.DECRYPT_MODE, (privateKey != null)?privateKey:publicKey);
+        try {
+            // initialize RSA encryption
+            Cipher ci = Cipher.getInstance(CIPHER_SPEC);
+            ci.init(Cipher.DECRYPT_MODE, (privateKey != null) ? privateKey : publicKey);
 
-        // read data from input into buffer, decrypt and write to output
-        byte[] ibuf = new byte[BUFFER_SIZE];
-        int len;
-        while ((len = in.read(ibuf)) != -1) {
-            byte[] obuf = ci.update(ibuf, 0, len);
+            // read data from input into buffer, decrypt and write to output
+            byte[] ibuf = new byte[BUFFER_SIZE];
+            int len;
+            while ((len = in.read(ibuf)) != -1) {
+                byte[] obuf = ci.update(ibuf, 0, len);
+                if (obuf != null) out.write(obuf);
+            }
+            byte[] obuf = ci.doFinal();
             if (obuf != null) out.write(obuf);
+        } catch (SocketException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new EncryptionException(e, "Could not decrypt data");
         }
-        byte[] obuf = ci.doFinal();
-        if (obuf != null) out.write(obuf);
     }
 
     @Override
-    public NamedContainer<net.ME1312.SubData.Client.Cipher, String> getCipher(String handle) {
-        return forward.getOrDefault(handle.toUpperCase(), () -> new NamedContainer<>(this, null)).run();
+    public NamedContainer<net.ME1312.SubData.Client.Cipher, String> newCipher(String handle) {
+        return forwardG.getOrDefault(handle.toUpperCase(), () -> null).run();
     }
 
     @Override
-    public void addCipher(String handle, Util.ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>> generator) {
+    public net.ME1312.SubData.Client.Cipher getCipher(String handle, String key) {
+        return forwardP.getOrDefault(handle.toUpperCase(), token -> null).run(key);
+    }
+
+    public static void addCipher(String handle, ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>> generator, ReturnCallback<String, net.ME1312.SubData.Client.Cipher> parser) {
         if (Util.isNull(generator)) throw new NullPointerException();
         handle = handle.toUpperCase();
-        if (!forward.keySet().contains(handle)) forward.put(handle, generator);
+        if (!forwardG.keySet().contains(handle)) forwardG.put(handle, generator);
+        if (!forwardP.keySet().contains(handle)) forwardP.put(handle, parser);
     }
 
-    @Override
-    public void removeCipher(String handle) {
-        forward.remove(handle.toUpperCase());
+    public static void removeCipher(String handle) {
+        forwardG.remove(handle.toUpperCase());
+        forwardP.remove(handle.toUpperCase());
     }
 }

@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Protocol;
 
-import net.ME1312.SubData.Server.Client;
+import net.ME1312.SubData.Server.SubDataClient;
 
 import java.io.InputStream;
 
@@ -16,10 +16,10 @@ public interface PacketStreamIn extends PacketIn {
      * @param data Data Stream
      * @throws Throwable
      */
-    void receive(Client client, InputStream data) throws Throwable;
+    void receive(SubDataClient client, InputStream data) throws Throwable;
 
     @Override
-    default void receive(Client client) throws Throwable {
+    default void receive(SubDataClient client) throws Throwable {
 
     }
 }

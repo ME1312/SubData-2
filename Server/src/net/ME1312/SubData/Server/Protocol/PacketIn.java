@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Protocol;
 
-import net.ME1312.SubData.Server.Client;
+import net.ME1312.SubData.Server.SubDataClient;
 
 /**
  * Packet In Layout Class
@@ -13,7 +13,7 @@ public interface PacketIn {
      * @param client Client who sent
      * @throws Throwable
      */
-    void receive(Client client) throws Throwable;
+    void receive(SubDataClient client) throws Throwable;
 
     /**
      * Protocol Version

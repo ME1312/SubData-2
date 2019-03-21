@@ -1,6 +1,7 @@
 package net.ME1312.SubData.Client.Encryption;
 
 import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -293,12 +294,12 @@ public final class AES implements net.ME1312.SubData.Client.Cipher {
     /**
      * Thrown if an attempt is made to decrypt a stream with an incorrect password.
      */
-    public static class InvalidPasswordException extends Exception { }
+    public static class InvalidPasswordException extends EncryptionException { }
 
     /**
      * Thrown if an attempt is made to encrypt a stream with an invalid AES key length.
      */
-    public static class InvalidKeyLengthException extends Exception {
+    public static class InvalidKeyLengthException extends EncryptionException {
         InvalidKeyLengthException(int length) {
             super("Invalid AES key length: " + length);
         }
@@ -308,7 +309,7 @@ public final class AES implements net.ME1312.SubData.Client.Cipher {
      * Thrown if 192- or 256-bit AES encryption or decryption is attempted,
      * but not available on the particular Java platform.
      */
-    public static class StrongEncryptionNotAvailableException extends Exception {
+    public static class StrongEncryptionNotAvailableException extends EncryptionException {
         public StrongEncryptionNotAvailableException(int keySize) {
             super(keySize + "-bit AES encryption is not available on this Java platform.");
         }
@@ -317,7 +318,7 @@ public final class AES implements net.ME1312.SubData.Client.Cipher {
     /**
      * Thrown if an attempt is made to decrypt an invalid AES stream.
      */
-    public static class InvalidAESStreamException extends Exception {
+    public static class InvalidAESStreamException extends EncryptionException {
         public InvalidAESStreamException() { super(); };
         public InvalidAESStreamException(Exception e) { super(e); }
     }

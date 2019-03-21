@@ -8,9 +8,11 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>Server/api</module>
         <module>Server</module>
+        <module>Server/test</module>
+        <module>Client/api</module>
         <module>Client</module>
-		<module>Server/test</module>
         <module>Client/test</module>
     </modules>
 </project>

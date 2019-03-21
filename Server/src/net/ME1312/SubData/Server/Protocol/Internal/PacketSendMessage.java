@@ -2,11 +2,13 @@ package net.ME1312.SubData.Server.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
+import net.ME1312.SubData.Server.DataProtocol;
 import net.ME1312.SubData.Server.DataServer;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Protocol.MessageOut;
 import net.ME1312.SubData.Server.Protocol.MessageStreamOut;
 import net.ME1312.SubData.Server.Protocol.PacketStreamOut;
+import net.ME1312.SubData.Server.SubDataClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,19 +32,19 @@ public class PacketSendMessage implements PacketStreamOut {
     }
 
     @Override
-    public void send(OutputStream data) throws Throwable {
-        HashMap<Class<? extends MessageOut>, NamedContainer<String, String>> mOut = Util.reflect(DataServer.class.getDeclaredField("mOut"), null);
+    public void send(SubDataClient client, OutputStream data) throws Throwable {
+        HashMap<Class<? extends MessageOut>, NamedContainer<String, String>> mOut = Util.reflect(DataProtocol.class.getDeclaredField("mOut"), client.getServer().getProtocol());
 
         if (!mOut.keySet().contains(message.getClass())) throw new IllegalMessageException("Could not find handle for message: " + message.getClass().getCanonicalName());
         if (message.version() == null || message.version().toString().length() == 0) throw new IllegalMessageException("Cannot send message with null version: " + message.getClass().getCanonicalName());
 
-        data.write(escape(mOut.get(message.getClass()).name().getBytes(StandardCharsets.UTF_16)));
+        data.write(escape(mOut.get(message.getClass()).name().getBytes(StandardCharsets.UTF_8)));
         data.write('\u0003');
-        data.write(escape(mOut.get(message.getClass()).get().getBytes(StandardCharsets.UTF_16)));
+        data.write(escape(mOut.get(message.getClass()).get().getBytes(StandardCharsets.UTF_8)));
         data.write('\u0003');
-        data.write(escape(message.version().toString().getBytes(StandardCharsets.UTF_16)));
+        data.write(escape(message.version().toString().getBytes(StandardCharsets.UTF_8)));
         data.write('\u0003');
-        if (message instanceof MessageStreamOut) ((MessageStreamOut) message).send(data);
+        if (message instanceof MessageStreamOut) ((MessageStreamOut) message).send(client, data);
         else data.close();
     }
 

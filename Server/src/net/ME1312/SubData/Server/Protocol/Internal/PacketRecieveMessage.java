@@ -2,12 +2,12 @@ package net.ME1312.SubData.Server.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
-import net.ME1312.SubData.Server.Client;
 import net.ME1312.SubData.Server.DataServer;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Protocol.MessageIn;
 import net.ME1312.SubData.Server.Protocol.MessageStreamIn;
 import net.ME1312.SubData.Server.Protocol.PacketStreamIn;
+import net.ME1312.SubData.Server.SubDataClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -20,7 +20,7 @@ import java.util.HashMap;
 public class PacketRecieveMessage implements PacketStreamIn {
 
     @Override
-    public void receive(Client client, InputStream data) throws Throwable {
+    public void receive(SubDataClient client, InputStream data) throws Throwable {
         ByteArrayOutputStream pending = new ByteArrayOutputStream();
         String channel = null, handle = null;
         Version version = null;
@@ -32,20 +32,20 @@ public class PacketRecieveMessage implements PacketStreamIn {
             if (escaped) {
                 pending.write(b);
                 escaped = false;
-            } else if (state < 3) switch (b) {
+            } else switch (b) {
                 case '\u0002': // [STX] (Escape character)
                     escaped = true;
                     break;
                 case '\u0003': // [ETX] (State change character)
                     switch (state) {
                         case 0:
-                            channel = new String(pending.toByteArray(), StandardCharsets.UTF_16);
+                            channel = new String(pending.toByteArray(), StandardCharsets.UTF_8);
                             break;
                         case 1:
-                            handle = new String(pending.toByteArray(), StandardCharsets.UTF_16);
+                            handle = new String(pending.toByteArray(), StandardCharsets.UTF_8);
                             break;
                         case 2:
-                            version = Version.fromString(new String(pending.toByteArray(), StandardCharsets.UTF_16));
+                            version = Version.fromString(new String(pending.toByteArray(), StandardCharsets.UTF_8));
                             break;
                     }
                     pending.reset();
@@ -57,7 +57,7 @@ public class PacketRecieveMessage implements PacketStreamIn {
             }
         }
 
-        HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataServer.class.getDeclaredField("mIn"), null);
+        HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataServer.class.getDeclaredField("mIn"), client.getServer().getProtocol());
 
         if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + channel + ", " + handle + ", " + version + "]");
         if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [" + channel + ", " + handle + ", " + version + "]");

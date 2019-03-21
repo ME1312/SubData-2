@@ -1,8 +1,8 @@
 package net.ME1312.SubData.Server.Protocol;
 
 import net.ME1312.Galaxi.Library.Config.YAMLSection;
-import net.ME1312.SubData.Server.Client;
 import net.ME1312.SubData.Server.Library.MessagePackHandler;
+import net.ME1312.SubData.Server.SubDataClient;
 import org.msgpack.core.MessagePack;
 
 import java.io.InputStream;
@@ -19,10 +19,10 @@ public interface PacketObjectIn extends PacketStreamIn {
      * @param data Data Object
      * @throws Throwable
      */
-    void receive(Client client, YAMLSection data);
+    void receive(SubDataClient client, YAMLSection data);
 
     @Override
-    default void receive(Client client, InputStream data) throws Throwable {
+    default void receive(SubDataClient client, InputStream data) throws Throwable {
         receive(client, MessagePackHandler.unpack(MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()));
     }
 }

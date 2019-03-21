@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.ME1312.SubData</groupId>
-    <artifactId>SubDataServer</artifactId>
+    <artifactId>Server</artifactId>
     <version>-PLACEHOLDER</version>
     <packaging>jar</packaging>
 
@@ -19,14 +19,14 @@
     <dependencies>
         <dependency>
             <groupId>net.ME1312.Galaxi</groupId>
-            <artifactId>GalaxiAPI</artifactId>
-            <version>19w05b</version>
+            <artifactId>GalaxiUtil</artifactId>
+            <version>19w12c</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.msgpack</groupId>
-            <artifactId>msgpack-core</artifactId>
-            <version>0.8.16</version>
+            <groupId>net.ME1312.SubData</groupId>
+            <artifactId>ServerAPI</artifactId>
+            <version>-PLACEHOLDER</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -75,7 +75,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.2-beta-5</version>
                 <configuration>
-                    <finalName>SubDataServer</finalName>
+                    <finalName>Server</finalName>
                     <outputDirectory>../Artifacts</outputDirectory>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
@@ -110,6 +110,10 @@
                             <outputDirectory>${basedir}/../Javadoc/Server</outputDirectory>
                             <reportOutputDirectory>${basedir}/../Javadoc/Server</reportOutputDirectory>
                             <additionalOptions>-Xdoclint:none</additionalOptions>
+                            <includeDependencySources>true</includeDependencySources>
+                            <dependencySourceIncludes>
+                                <dependencySourceInclude>net.ME1312.SubData:ServerAPI:*</dependencySourceInclude>
+                            </dependencySourceIncludes>
                         </configuration>
                     </execution>
                 </executions>
