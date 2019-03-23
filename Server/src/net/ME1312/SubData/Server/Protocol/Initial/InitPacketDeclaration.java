@@ -2,12 +2,10 @@ package net.ME1312.SubData.Server.Protocol.Initial;
 
 import net.ME1312.Galaxi.Library.Config.YAMLSection;
 import net.ME1312.Galaxi.Library.Util;
-import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Server.Library.ConnectionState;
 import net.ME1312.SubData.Server.Protocol.PacketIn;
 import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
 import net.ME1312.SubData.Server.SubDataClient;
-import net.ME1312.SubData.Server.SubDataProtocol;
 
 /**
  * Initial Packet for Declaration Class
@@ -16,9 +14,8 @@ public final class InitPacketDeclaration implements InitialPacket, PacketIn, Pac
     @Override
     public YAMLSection send(SubDataClient client) throws Throwable {
         YAMLSection data = new YAMLSection();
-        Version version = Util.reflect(SubDataProtocol.class.getDeclaredField("version"), client.getServer().getProtocol());
-
-        data.set("v", (version != null)?version:new Version(1));
+        data.set("n", client.getServer().getProtocol().getName());
+        data.set("v", client.getServer().getProtocol().getVersion());
         data.set("id", client.getID());
         return data;
     }

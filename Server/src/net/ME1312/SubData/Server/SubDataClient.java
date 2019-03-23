@@ -1,6 +1,9 @@
 package net.ME1312.SubData.Server;
 
+import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container;
+import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
 import net.ME1312.SubData.Server.Library.ConnectionState;
@@ -68,9 +71,6 @@ public class SubDataClient extends DataClient {
                 }
             }
         }, 15000);
-
-        sendPacket(new InitPacketDeclaration());
-        read();
     }
 
     private void read(Container<Boolean> reset, InputStream data) {
@@ -155,7 +155,7 @@ public class SubDataClient extends DataClient {
             }
         }
     }
-    private void read() {
+    void read() {
         if (!socket.isClosed()) new Thread(() -> {
             Container<Boolean> reset = new Container<>(false);
             try {
@@ -264,7 +264,7 @@ public class SubDataClient extends DataClient {
         }
         Util.isException(data::close);
     }
-    private void write() {
+    void write() {
         if (queue != null && !socket.isClosed()) new Thread(() -> {
             if (queue.size() > 0) {
                 try {
@@ -330,7 +330,11 @@ public class SubDataClient extends DataClient {
     public void sendPacket(PacketOut packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
         if (!isClosed()) {
-            if (state.asInt() >= READY.asInt() || packet instanceof InitialPacket) {
+            if (state.asInt() < READY.asInt() && !(packet instanceof InitialPacket)) {
+                prequeue.add(packet);
+            } else if (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) {
+                // do nothing
+            } else {
                 boolean init = false;
 
                 if (queue == null) {
@@ -340,8 +344,6 @@ public class SubDataClient extends DataClient {
                 queue.add(packet);
 
                 if (init) write();
-            } else {
-                prequeue.add(packet);
             }
         }
     }
@@ -389,20 +391,33 @@ public class SubDataClient extends DataClient {
     }
 
     public void close() throws IOException {
-        state = CLOSING;
-        if (!isClosed()) sendPacket(new PacketDisconnect());
-
-        timeout = new Timer("SubDataServer::Disconnect_Timeout(" + address.toString() + ')');
-        timeout.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (!socket.isClosed()) try {
-                    close(CLOSE_REQUESTED);
-                } catch (IOException e) {
-                    DebugUtil.logException(e, subdata.protocol.log);
-                }
+        if (state.asInt() < CLOSING.asInt() && !socket.isClosed()) {
+            boolean result = true;
+            LinkedList<ReturnCallback<DataClient, Boolean>> events = on.close;
+            on.close = new LinkedList<>();
+            for (ReturnCallback<DataClient, Boolean> next : events) try {
+                if (next != null) result = next.run(this) != Boolean.FALSE && result;
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.protocol.log);
             }
-        }, 5000);
+
+            if (result) {
+                state = CLOSING;
+                if (!isClosed()) sendPacket(new PacketDisconnect());
+
+                timeout = new Timer("SubDataServer::Disconnect_Timeout(" + address.toString() + ')');
+                timeout.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (!socket.isClosed()) try {
+                            close(CLOSE_REQUESTED);
+                        } catch (IOException e) {
+                            DebugUtil.logException(e, subdata.protocol.log);
+                        }
+                    }
+                }, 5000);
+            }
+        }
     }
     void close(DisconnectReason reason) throws IOException {
         if (state != CLOSED) {
@@ -418,6 +433,14 @@ public class SubDataClient extends DataClient {
                 handler = null;
             }
             if (subdata.getClients().values().contains(this)) subdata.removeClient(this);
+
+            LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = on.closed;
+            on.closed = new LinkedList<>();
+            for (Callback<NamedContainer<DisconnectReason, DataClient>> next : events) try {
+                if (next != null) next.run(new NamedContainer<>(reason, this));
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.protocol.log);
+            }
         }
     }
 

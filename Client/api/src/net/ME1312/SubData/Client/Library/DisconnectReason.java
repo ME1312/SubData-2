@@ -5,11 +5,6 @@ package net.ME1312.SubData.Client.Library;
  */
 public enum DisconnectReason {
     /**
-     * SubData could not self-initialize within the allotted time
-     */
-    INITIALIZATION_TIMEOUT,
-
-    /**
      * SubData disconnected because of a Protocol Mismatch
      */
     PROTOCOL_MISMATCH,

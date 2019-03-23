@@ -1,11 +1,16 @@
 package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Config.YAMLSection;
+import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.SubData.Client.Library.DisconnectReason;
 import net.ME1312.SubData.Client.Protocol.MessageOut;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,7 +18,48 @@ import java.util.UUID;
  * SubData Client API Class
  */
 public abstract class DataClient {
+    public final Events on = new Events();
     private UUID id;
+
+    /**
+     * SubData Client Event API Class
+     */
+    public static class Events {
+        LinkedList<Callback<DataClient>> ready = new LinkedList<Callback<DataClient>>();
+        LinkedList<ReturnCallback<DataClient, Boolean>> close = new LinkedList<ReturnCallback<DataClient, Boolean>>();
+        LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> closed = new LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>>();
+        private Events() {}
+
+        /**
+         * On Connection Ready Event
+         *
+         * @param callbacks Callback
+         */
+        @SafeVarargs
+        public final void ready(Callback<DataClient>... callbacks) {
+            ready.addAll(Arrays.asList(callbacks));
+        }
+
+        /**
+         * On Connection Close Event
+         *
+         * @param callbacks Callback
+         */
+        @SafeVarargs
+        public final void close(ReturnCallback<DataClient, Boolean>... callbacks) {
+            close.addAll(Arrays.asList(callbacks));
+        }
+
+        /**
+         * On Connection Closed Event
+         *
+         * @param callbacks Callback
+         */
+        @SafeVarargs
+        public final void closed(Callback<NamedContainer<DisconnectReason, DataClient>>... callbacks) {
+            closed.addAll(Arrays.asList(callbacks));
+        }
+    }
 
     /**
      * Grabs a Client from the Network

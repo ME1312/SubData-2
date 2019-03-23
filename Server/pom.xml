@@ -114,6 +114,9 @@
                             <dependencySourceIncludes>
                                 <dependencySourceInclude>net.ME1312.SubData:ServerAPI:*</dependencySourceInclude>
                             </dependencySourceIncludes>
+                            <links>
+                                <link>https://src.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiUtil/</link>
+                            </links>
                         </configuration>
                     </execution>
                 </executions>

@@ -67,11 +67,16 @@ public final class AES implements net.ME1312.SubData.Client.Cipher {
      * @param keyLength 128, 192, or 256 bit mode
      */
     static NamedContainer<net.ME1312.SubData.Client.Cipher, String> random(int keyLength) {
-        byte[] bytes = new byte[keyLength / 8];
-        new SecureRandom().nextBytes(bytes);
-        String random = Base64.getEncoder().withoutPadding().encodeToString(bytes);
-        if (random.length() > bytes.length) random = random.substring(0, bytes.length);
-        return new NamedContainer<>(new AES(keyLength, random), random);
+        StringBuilder builder = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+        int i = random.nextInt(keyLength - (keyLength / 2) + 1) + (keyLength / 2);
+        while (i > 1) {
+            builder.append((char) random.nextInt(Character.MAX_VALUE + 1));
+            i -= 2;
+        }
+
+        String key = builder.toString();
+        return new NamedContainer<>(new AES(keyLength, key), key);
     }
 
     /**

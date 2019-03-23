@@ -1,12 +1,11 @@
 package net.ME1312.SubData.Server;
 
+import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Util;
-import net.ME1312.SubData.Server.Protocol.MessageOut;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +14,48 @@ import java.util.regex.Pattern;
  * SubData Server API Class
  */
 public abstract class DataServer {
+    public final Events on = new Events();
     HashMap<String, Boolean> whitelist = new HashMap<String, Boolean>();
+
+    /**
+     * SubData Server Event API Class
+     */
+    public static class Events {
+        LinkedList<ReturnCallback<DataClient, Boolean>> connect = new LinkedList<ReturnCallback<DataClient, Boolean>>();
+        LinkedList<ReturnCallback<DataServer, Boolean>> close = new LinkedList<ReturnCallback<DataServer, Boolean>>();
+        LinkedList<Callback<DataServer>> closed = new LinkedList<Callback<DataServer>>();
+        private Events() {}
+
+        /**
+         * On Client Connect Event
+         *
+         * @param callbacks Callback
+         */
+        @SafeVarargs
+        public final void connect(ReturnCallback<DataClient, Boolean>... callbacks) {
+            connect.addAll(Arrays.asList(callbacks));
+        }
+
+        /**
+         * On Listener Close Event
+         *
+         * @param callbacks Callback
+         */
+        @SafeVarargs
+        public final void close(ReturnCallback<DataServer, Boolean>... callbacks) {
+            close.addAll(Arrays.asList(callbacks));
+        }
+
+        /**
+         * On Listener Closed Event
+         *
+         * @param callbacks Callback
+         */
+        @SafeVarargs
+        public final void closed(Callback<DataServer>... callbacks) {
+            closed.addAll(Arrays.asList(callbacks));
+        }
+    }
 
     /**
      * Get the Protocol for this Server

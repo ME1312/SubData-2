@@ -18,6 +18,14 @@ public abstract class DataProtocol {
     final HashMap<String, HashMap<String, MessageIn>> mIn = new HashMap<String, HashMap<String, MessageIn>>();
 
     /**
+     * Get the Network Protocol Name
+     *
+     * @return Protocol Name
+     */
+
+    public abstract String getName();
+
+    /**
      * Get the Supported Protocol Version List
      *
      * @return Supported Protocol Versions

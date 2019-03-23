@@ -1,7 +1,10 @@
 package net.ME1312.SubData.Client.Protocol.Initial;
 
+import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Util;
+import net.ME1312.SubData.Client.DataClient;
 import net.ME1312.SubData.Client.Library.ConnectionState;
+import net.ME1312.SubData.Client.Library.DebugUtil;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.Protocol.PacketStreamOut;
@@ -9,6 +12,7 @@ import net.ME1312.SubData.Client.SubDataClient;
 import net.ME1312.SubData.Client.SubDataProtocol;
 
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
 import java.util.logging.Logger;
 
@@ -28,6 +32,14 @@ public final class InitPacketChangeProtocol implements InitialPacket, PacketIn, 
                 Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue);
             }
             data.close();
+
+            LinkedList<Callback<DataClient>> events = Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on);
+            Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on, new LinkedList<Callback<DataClient>>());
+            for (Callback<DataClient> next : events) try {
+                if (next != null) next.run(client);
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+            }
         }
     }
 

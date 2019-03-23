@@ -22,13 +22,18 @@ public final class InitPacketDeclaration implements InitialPacket, PacketObjectI
     @Override
     public void receive(SubDataClient client, YAMLSection data) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.PRE_INITIALIZATION) {
-            List<Version> versions = Arrays.asList(client.getProtocol().getVersion());
-            if (versions.contains(data.getVersion("v"))) {
-                Util.reflect(DataClient.class.getDeclaredField("id"), client, data.getUUID("id"));
-                Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.INITIALIZATION);
-                client.sendPacket(this);
+            if (client.getProtocol().getName() == data.getRawString("n")) {
+                List<Version> versions = Arrays.asList(client.getProtocol().getVersion());
+                if (versions.contains(data.getVersion("v"))) {
+                    Util.reflect(DataClient.class.getDeclaredField("id"), client, data.getUUID("id"));
+                    Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.INITIALIZATION);
+                    client.sendPacket(this);
+                } else {
+                    DebugUtil.logException(new IllegalArgumentException("Protocol version mismatch: [" + data.getVersion("v") + "] is not one of " + versions.toString()), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+                    Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.PROTOCOL_MISMATCH);
+                }
             } else {
-                DebugUtil.logException(new IllegalArgumentException("Protocol version mismatch: [" + data.getVersion("v") + "] is not one of " + versions.toString()), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+                DebugUtil.logException(new IllegalArgumentException("Protocol mismatch: [" + data.getVersion("n") + "] != [" + client.getProtocol().getName() + "]"), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
                 Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.PROTOCOL_MISMATCH);
             }
         }

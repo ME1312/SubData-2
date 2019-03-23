@@ -1,11 +1,16 @@
 package net.ME1312.SubData.Server;
 
+import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
 import net.ME1312.SubData.Server.Library.DebugUtil;
+import net.ME1312.SubData.Server.Library.DisconnectReason;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
+import net.ME1312.SubData.Server.Protocol.Initial.InitPacketDeclaration;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.util.*;
 
@@ -87,9 +92,28 @@ public class SubDataServer extends DataServer {
         if (checkConnection(socket.getInetAddress())) {
             UUID id = Util.getNew(clients.keySet(), UUID::randomUUID);
             SubDataClient client = new SubDataClient(this, id, socket);
-            clients.put(id, client);
-            protocol.log.info(client.getAddress().toString() + " has connected");
-            return client;
+
+            boolean result = true;
+            LinkedList<ReturnCallback<DataClient, Boolean>> events = on.connect;
+            on.connect = new LinkedList<>();
+            for (ReturnCallback<DataClient, Boolean> next : events) try {
+                if (next != null) result = next.run(client) != Boolean.FALSE && result;
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), protocol.log);
+            }
+
+            if (result) {
+                clients.put(id, client);
+                protocol.log.info(client.getAddress().toString() + " has connected");
+
+                client.sendPacket(new InitPacketDeclaration());
+                client.read();
+                return client;
+            } else {
+                client.close(DisconnectReason.CLOSE_REQUESTED);
+                protocol.log.info(socket.getInetAddress().toString() + " attempted to connect, but was blocked");
+                return null;
+            }
         } else {
             protocol.log.info(socket.getInetAddress().toString() + " attempted to connect, but isn't white-listed");
             socket.close();
@@ -122,13 +146,32 @@ public class SubDataServer extends DataServer {
     }
 
     public void close() throws IOException {
-        while(clients.size() > 0) {
-            SubDataClient client = (SubDataClient) clients.values().toArray()[0];
-            client.close();
-            Util.isException(client::waitFor);
+        boolean result = true;
+        LinkedList<ReturnCallback<DataServer, Boolean>> events = on.close;
+        on.close = new LinkedList<>();
+        for (ReturnCallback<DataServer, Boolean> next : events) try {
+            if (next != null) result = next.run(this) != Boolean.FALSE && result;
+        } catch (Throwable e) {
+            DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), protocol.log);
         }
-        server.close();
-        protocol.log.info("Listener " + this.address + " has been closed");
+
+        if (result) {
+            while (clients.size() > 0) {
+                SubDataClient client = (SubDataClient) clients.values().toArray()[0];
+                client.close();
+                Util.isException(client::waitFor);
+            }
+            server.close();
+
+            LinkedList<Callback<DataServer>> events2 = on.closed;
+            for (Callback<DataServer> next : events2) try {
+                if (next != null) next.run(this);
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), protocol.log);
+            }
+
+            protocol.log.info("Listener " + this.address + " has been closed");
+        }
     }
 
     public boolean isClosed() {

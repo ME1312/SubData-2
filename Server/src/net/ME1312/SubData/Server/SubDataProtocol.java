@@ -24,6 +24,7 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
     int MAX_QUEUE = 64;
     Version version;
+    String name;
     Logger log;
 
     /**
@@ -63,6 +64,20 @@ public class SubDataProtocol extends DataProtocol {
     }
 
     /**
+     * Set the Network Protocol Name (may only be called once)
+     *
+     * @param name Protocol Name
+     */
+    public void setName(String name) {
+        if (this.name != null) throw new IllegalStateException("Protocol name already set");
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /**
      * Set the Network Protocol Version (may only be called once)
      *
      * @param version Protocol Version
@@ -73,7 +88,7 @@ public class SubDataProtocol extends DataProtocol {
     }
 
     public Version getVersion() {
-        return this.version;
+        return (version != null)?version:new Version(0);
     }
 
     /**

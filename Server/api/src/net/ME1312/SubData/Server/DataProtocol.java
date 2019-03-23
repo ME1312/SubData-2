@@ -19,6 +19,14 @@ public abstract class DataProtocol {
     List<String> whitelist = new ArrayList<String>();
 
     /**
+     * Get the Network Protocol Name
+     *
+     * @return Protocol Name
+     */
+
+    public abstract String getName();
+
+    /**
      * Get the Network Protocol Version
      *
      * @return Protocol Version

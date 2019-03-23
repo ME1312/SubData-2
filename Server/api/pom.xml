@@ -110,6 +110,9 @@
                             <outputDirectory>../../Javadoc/ServerAPI</outputDirectory>
                             <reportOutputDirectory>../../Javadoc/ServerAPI</reportOutputDirectory>
                             <additionalOptions>-Xdoclint:none</additionalOptions>
+                            <links>
+                                <link>https://src.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiUtil/</link>
+                            </links>
                         </configuration>
                     </execution>
                 </executions>

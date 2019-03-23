@@ -1,8 +1,10 @@
 package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Config.YAMLSection;
 import net.ME1312.Galaxi.Library.Container;
+import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.ConnectionState;
@@ -139,7 +141,7 @@ public class SubDataClient extends DataClient {
             }
         }
     }
-    private void read() {
+    void read() {
         if (!socket.isClosed()) new Thread(() -> {
             Container<Boolean> reset = new Container<>(false);
             try {
@@ -249,7 +251,7 @@ public class SubDataClient extends DataClient {
         }
         Util.isException(data::close);
     }
-    private void write() {
+    void write() {
         if (queue != null && !socket.isClosed()) new Thread(() -> {
             if (queue.size() > 0) {
                 try {
@@ -314,8 +316,12 @@ public class SubDataClient extends DataClient {
      */
     public void sendPacket(PacketOut packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (!socket.isClosed()) {
-            if (state.asInt() >= READY.asInt() || packet instanceof InitialPacket) {
+        if (!isClosed()) {
+            if (state.asInt() < READY.asInt() && !(packet instanceof InitialPacket)) {
+                prequeue.add(packet);
+            } else if (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) {
+                // do nothing
+            } else {
                 boolean init = false;
 
                 if (queue == null) {
@@ -325,8 +331,6 @@ public class SubDataClient extends DataClient {
                 queue.add(packet);
 
                 if (init) write();
-            } else {
-                prequeue.add(packet);
             }
         }
     }
@@ -410,20 +414,33 @@ public class SubDataClient extends DataClient {
     }
 
     public void close() throws IOException {
-        state = CLOSING;
-        if (!isClosed()) sendPacket(new PacketDisconnect());
-
-        Timer timeout = new Timer("SubDataClient::Disconnect_Timeout");
-        timeout.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (!socket.isClosed()) try {
-                    close(CLOSE_REQUESTED);
-                } catch (IOException e) {
-                    DebugUtil.logException(e, protocol.log);
-                }
+        if (state.asInt() < CLOSING.asInt() && !socket.isClosed()) {
+            boolean result = true;
+            LinkedList<ReturnCallback<DataClient, Boolean>> events = on.close;
+            on.close = new LinkedList<>();
+            for (ReturnCallback<DataClient, Boolean> next : events) try {
+                if (next != null) result = next.run(this) != Boolean.FALSE && result;
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), protocol.log);
             }
-        }, 5000);
+
+            if (result) {
+                state = CLOSING;
+                if (!isClosed()) sendPacket(new PacketDisconnect());
+
+                Timer timeout = new Timer("SubDataClient::Disconnect_Timeout");
+                timeout.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (!socket.isClosed()) try {
+                            close(CLOSE_REQUESTED);
+                        } catch (IOException e) {
+                            DebugUtil.logException(e, protocol.log);
+                        }
+                    }
+                }, 5000);
+            }
+        }
     }
 
     void close(DisconnectReason reason) throws IOException {
@@ -436,6 +453,14 @@ public class SubDataClient extends DataClient {
 
             socket.close();
             protocol.log.info("Disconnected from " + socket.getRemoteSocketAddress());
+
+            LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = on.closed;
+            on.closed = new LinkedList<>();
+            for (Callback<NamedContainer<DisconnectReason, DataClient>> next : events) try {
+                if (next != null) next.run(new NamedContainer<>(reason, this));
+            } catch (Throwable e) {
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), protocol.log);
+            }
         }
     }
 

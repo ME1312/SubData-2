@@ -24,6 +24,7 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<Class<? extends PacketOut>, Integer> pOut = new HashMap<Class<? extends PacketOut>, Integer>();
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
     ArrayList<Version> version = new ArrayList<Version>();
+    String name;
     Logger log;
 
     /**
@@ -62,6 +63,20 @@ public class SubDataProtocol extends DataProtocol {
     }
 
     /**
+     * Set the Network Protocol Name (may only be called once)
+     *
+     * @param name Protocol Name
+     */
+    public void setName(String name) {
+        if (this.name != null) throw new IllegalStateException("Protocol name already set");
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /**
      * Add a Protocol Version to the Supported Versions List
      *
      * @param version Protocol Version
@@ -82,7 +97,7 @@ public class SubDataProtocol extends DataProtocol {
     public Version[] getVersion() {
         if (version.size() <= 0) {
             return new Version[]{
-                    new Version(1)
+                    new Version(0)
             };
         } else {
             return version.toArray(new Version[0]);
