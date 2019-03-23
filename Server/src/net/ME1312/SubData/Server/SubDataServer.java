@@ -2,10 +2,10 @@ package net.ME1312.SubData.Server;
 
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
+import net.ME1312.SubData.Server.Library.DebugUtil;
+import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.*;
 import java.util.*;
 
@@ -13,14 +13,13 @@ import java.util.*;
  * SubData Server Class
  */
 public class SubDataServer extends DataServer {
-    private HashMap<String, SubDataClient> clients = new HashMap<String, SubDataClient>();
-    private Runnable shutdown;
+    private HashMap<UUID, SubDataClient> clients = new HashMap<UUID, SubDataClient>();
     private ServerSocket server;
     private String address;
     SubDataProtocol protocol;
     String cipher;
 
-    SubDataServer(SubDataProtocol protocol, InetAddress address, int port, String cipher, Runnable shutdown) throws IOException {
+    SubDataServer(SubDataProtocol protocol, InetAddress address, int port, String cipher) throws IOException {
         if (Util.isNull(protocol)) throw new NullPointerException();
         if (address == null) {
             this.server = new ServerSocket(port, protocol.MAX_QUEUE);
@@ -32,23 +31,22 @@ public class SubDataServer extends DataServer {
             whitelist(address.getHostAddress());
         }
         this.protocol = protocol;
-        this.shutdown = shutdown;
 
         this.cipher = cipher = (cipher != null)?cipher:"NULL"; // Validate Cipher
         String[] ciphers = (cipher.contains("/"))?cipher.split("/"):new String[]{cipher};
-        Cipher ccurrent = NEH.get();
-        for (String cnext : ciphers) {
-            if (ciphers[0].equals(cnext)) {
-                ccurrent = protocol.ciphers.get(cnext.toUpperCase());
-            } else if (ccurrent instanceof CipherFactory) {
-                final Cipher ccurrent2 = ccurrent;
-                ccurrent = Util.getDespiteException(() -> ((CipherFactory) ccurrent2).newCipher(cnext.toUpperCase()).name(), null);
+        Cipher last = NEH.get();
+        for (String next : ciphers) {
+            if (ciphers[0].equals(next)) {
+                last = protocol.ciphers.get(next.toUpperCase());
+            } else if (last instanceof CipherFactory) {
+                final Cipher lastF = last;
+                last = Util.getDespiteException(() -> ((CipherFactory) lastF).newCipher(next.toUpperCase()).name(), null);
             } else {
-                ccurrent = null;
+                last = null;
             }
 
-            if (ccurrent == null)
-                throw new IllegalArgumentException("Unknown encryption type \"" + cnext + "\" in \"" + this.cipher + '\"');
+            if (last == null)
+                throw new EncryptionException("Unknown encryption type \"" + next + "\" in \"" + this.cipher + '\"');
         }
 
         protocol.log.info("Listening on " + this.address);
@@ -58,9 +56,7 @@ public class SubDataServer extends DataServer {
                     addClient(server.accept());
                 } catch (IOException e) {
                     if (!(e instanceof SocketException)) {
-                        StringWriter sw = new StringWriter();
-                        e.printStackTrace(new PrintWriter(sw));
-                        protocol.log.severe(sw.toString());
+                        DebugUtil.logException(e, protocol.log);
                     }
                 }
             }
@@ -76,11 +72,6 @@ public class SubDataServer extends DataServer {
         return server;
     }
 
-    /**
-     * Get the Protocol for this Server
-     *
-     * @return Server Protocol
-     */
     public SubDataProtocol getProtocol() {
         return protocol;
     }
@@ -94,9 +85,10 @@ public class SubDataServer extends DataServer {
     private SubDataClient addClient(Socket socket) throws IOException {
         if (Util.isNull(socket)) throw new NullPointerException();
         if (checkConnection(socket.getInetAddress())) {
-            SubDataClient client = new SubDataClient(this, socket);
+            UUID id = Util.getNew(clients.keySet(), UUID::randomUUID);
+            SubDataClient client = new SubDataClient(this, id, socket);
+            clients.put(id, client);
             protocol.log.info(client.getAddress().toString() + " has connected");
-            clients.put(client.getAddress().toString(), client);
             return client;
         } else {
             protocol.log.info(socket.getInetAddress().toString() + " attempted to connect, but isn't white-listed");
@@ -105,97 +97,43 @@ public class SubDataServer extends DataServer {
         }
     }
 
-    /**
-     * Grabs a Client from the Network
-     *
-     * @param socket Socket to search
-     * @return Client
-     */
-    public SubDataClient getClient(Socket socket) {
-        if (Util.isNull(socket)) throw new NullPointerException();
-        return getClient(new InetSocketAddress(socket.getInetAddress(), socket.getPort()));
+    public SubDataClient getClient(UUID id) {
+        if (Util.isNull(id)) throw new NullPointerException();
+        return clients.get(id);
     }
 
-    /**
-     * Grabs a Client from the Network
-     *
-     * @param address Address to search
-     * @return Client
-     */
-    public SubDataClient getClient(InetSocketAddress address) {
-        if (Util.isNull(address)) throw new NullPointerException();
-        return getClient(address.toString());
+    public Map<UUID, ? extends SubDataClient> getClients() {
+        return new HashMap<>(clients);
     }
 
-    /**
-     * Grabs a Client from the Network
-     *
-     * @param address Address to search
-     * @return Client
-     */
-    public SubDataClient getClient(String address) {
-        if (Util.isNull(address)) throw new NullPointerException();
-        return clients.get(address);
-    }
-
-    /**
-     * Grabs all the Clients on the Network
-     *
-     * @return Client List
-     */
-    public Collection<DataClient> getClients() {
-        return new ArrayList<DataClient>(clients.values());
-    }
-
-    /**
-     * Remove a Client from the Network
-     *
-     * @param client Client to Kick
-     * @throws IOException
-     */
-    public void removeClient(SubDataClient client) throws IOException {
+    public void removeClient(DataClient client) throws IOException {
         if (Util.isNull(client)) throw new NullPointerException();
-        removeClient(client.getAddress());
+        removeClient(client.getID());
     }
 
-    /**
-     * Remove a Client from the Network
-     *
-     * @param address Address to Kick
-     * @throws IOException
-     */
-    public void removeClient(InetSocketAddress address) throws IOException {
-        if (Util.isNull(address)) throw new NullPointerException();
-        removeClient(address.toString());
-    }
-
-    /**
-     * Remove a Client from the Network
-     *
-     * @param address Address to Kick
-     * @throws IOException
-     */
-    public void removeClient(String address) throws IOException {
-        if (Util.isNull(address)) throw new NullPointerException();
-        if (clients.keySet().contains(address)) {
-            SubDataClient client = clients.get(address);
-            clients.remove(address);
+    public void removeClient(UUID id) throws IOException {
+        if (Util.isNull(id)) throw new NullPointerException();
+        if (clients.keySet().contains(id)) {
+            SubDataClient client = clients.get(id);
+            clients.remove(id);
             client.close();
             protocol.log.info(client.getAddress().toString() + " has disconnected");
         }
     }
 
-    /**
-     * Drops all connections and closes the SubData Listener
-     *
-     * @throws IOException
-     */
     public void close() throws IOException {
         while(clients.size() > 0) {
-            removeClient((SubDataClient) clients.values().toArray()[0]);
+            SubDataClient client = (SubDataClient) clients.values().toArray()[0];
+            client.close();
+            Util.isException(client::waitFor);
         }
         server.close();
         protocol.log.info("Listener " + this.address + " has been closed");
-        if (shutdown != null) shutdown.run();
     }
+
+    public boolean isClosed() {
+        return server.isClosed();
+    }
+
+
 }

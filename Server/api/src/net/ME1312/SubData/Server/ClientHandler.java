@@ -14,7 +14,6 @@ public interface ClientHandler {
     /**
      * Link a SubData Client to this Object
      *
-     * @see DataClient#setHandler(ClientHandler)
      * @param client Client to Link
      */
     void setSubData(DataClient client);

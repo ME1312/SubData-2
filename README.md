@@ -14,4 +14,6 @@ These are some quick links for common resources of SubData.
 
 ### Javadocs for Developers
 > [https://src.me1312.net/jenkins/job/SubData/javadoc/Server/](https://src.me1312.net/jenkins/job/SubData/javadoc/Server/)<br>
+> [https://src.me1312.net/jenkins/job/SubData/javadoc/ServerAPI/](https://src.me1312.net/jenkins/job/SubData/javadoc/ServerAPI/)<br>
 > [https://src.me1312.net/jenkins/job/SubData/javadoc/Client/](https://src.me1312.net/jenkins/job/SubData/javadoc/Client/)<br>
+> [https://src.me1312.net/jenkins/job/SubData/javadoc/ClientAPI/](https://src.me1312.net/jenkins/job/SubData/javadoc/ClientAPI/)<br>

@@ -78,6 +78,7 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
 
             bytes = Files.readAllBytes(publicKey.toPath());
             X509EncodedKeySpec ks2 = new X509EncodedKeySpec(bytes);
+            kf = KeyFactory.getInstance("RSA");
             this.publicKey = kf.generatePublic(ks2);
         }
     }

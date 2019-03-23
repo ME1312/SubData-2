@@ -7,10 +7,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,48 +27,33 @@ public abstract class DataServer {
     /**
      * Grabs a Client from the Network
      *
-     * @param socket Socket to search
+     * @param id Client ID
      * @return Client
      */
-    public abstract DataClient getClient(Socket socket);
-
-    /**
-     * Grabs a Client from the Network
-     *
-     * @param address Address to search
-     * @return Client
-     */
-    public abstract DataClient getClient(InetSocketAddress address);
-
-    /**
-     * Grabs a Client from the Network
-     *
-     * @param address Address to search
-     * @return Client
-     */
-    public abstract DataClient getClient(String address);
+    public abstract DataClient getClient(UUID id);
 
     /**
      * Grabs all the Clients on the Network
      *
-     * @return Client List
+     * @return Client Map
      */
-    public abstract Collection<DataClient> getClients();
+    public abstract Map<UUID, ? extends DataClient> getClients();
 
     /**
-     * Broadcast a Message to everything on the Network<br>
-     * <b>Warning:</b> There are usually different types of applications on the network at once, they may not recognise the same message handles
+     * Remove a Client from the Network
      *
-     * @param message Message to send
+     * @param client Client to Kick
+     * @throws IOException
      */
-    public void broadcastMessage(MessageOut message) {
-        if (Util.isNull(message)) throw new NullPointerException();
-        List<DataClient> clients = new ArrayList<DataClient>();
-        clients.addAll(getClients());
-        for (DataClient client : clients) {
-            client.sendMessage(message);
-        }
-    }
+    public abstract void removeClient(DataClient client) throws IOException;
+
+    /**
+     * Remove a Client from the Network
+     *
+     * @param id Client ID
+     * @throws IOException
+     */
+    public abstract void removeClient(UUID id) throws IOException;
 
     /**
      * Allow Access from an Address (Per-Server)
@@ -122,4 +104,20 @@ public abstract class DataServer {
      * @throws IOException
      */
     public abstract void close() throws IOException;
+
+    /**
+     * Wait for the listener to close
+     *
+     * @throws InterruptedException
+     */
+    public void waitFor() throws InterruptedException {
+        while (!isClosed()) Thread.sleep(125);
+    }
+
+    /**
+     * Get if the listener has been closed
+     *
+     * @return Closed Status
+     */
+    public abstract boolean isClosed();
 }

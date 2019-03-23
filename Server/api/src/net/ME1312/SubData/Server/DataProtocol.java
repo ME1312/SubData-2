@@ -2,6 +2,7 @@ package net.ME1312.SubData.Server;
 
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
+import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Server.Protocol.MessageIn;
 import net.ME1312.SubData.Server.Protocol.MessageOut;
 
@@ -16,6 +17,13 @@ public abstract class DataProtocol {
     final HashMap<Class<? extends MessageOut>, NamedContainer<String, String>> mOut = new HashMap<Class<? extends MessageOut>, NamedContainer<String, String>>();
     final HashMap<String, HashMap<String, MessageIn>> mIn = new HashMap<String, HashMap<String, MessageIn>>();
     List<String> whitelist = new ArrayList<String>();
+
+    /**
+     * Get the Network Protocol Version
+     *
+     * @return Protocol Version
+     */
+    public abstract Version getVersion();
 
     /**
      * Register MessageIn to the Network

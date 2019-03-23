@@ -19,7 +19,7 @@ public interface MessageObjectIn extends MessageStreamIn {
      * @param data Data Object
      * @throws Throwable
      */
-    void receive(DataClient client, YAMLSection data);
+    void receive(DataClient client, YAMLSection data) throws Throwable;
 
     @Override
     default void receive(DataClient client, InputStream data) throws Throwable {

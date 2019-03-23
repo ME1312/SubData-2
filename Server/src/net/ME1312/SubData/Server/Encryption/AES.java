@@ -196,7 +196,7 @@ public final class AES implements net.ME1312.SubData.Server.Cipher {
     }
 
     public String getName() {
-        return "AES_" + keyLength;
+        return "AES-" + keyLength;
     }
 
     /**

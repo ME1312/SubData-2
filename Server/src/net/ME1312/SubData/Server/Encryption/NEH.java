@@ -24,7 +24,7 @@ public final class NEH implements Cipher {
 
     @Override
     public String getName() {
-        return "NEH";
+        return "NULL";
     }
 
     @Override

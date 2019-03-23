@@ -1,9 +1,11 @@
 package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Util;
+import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.Encryption.NEH;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketRecieveMessage;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketSendMessage;
+import net.ME1312.SubData.Client.Library.DebugUtil;
+import net.ME1312.SubData.Client.Protocol.Internal.*;
+import net.ME1312.SubData.Client.Protocol.PacketDownloadClientList;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 
@@ -21,6 +23,7 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<String, Cipher> ciphers = new HashMap<String, Cipher>();
     final HashMap<Class<? extends PacketOut>, Integer> pOut = new HashMap<Class<? extends PacketOut>, Integer>();
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
+    ArrayList<Version> version = new ArrayList<Version>();
     Logger log;
 
     /**
@@ -34,8 +37,17 @@ public class SubDataProtocol extends DataProtocol {
         ciphers.put("NULL", NEH.get());
         ciphers.put("NONE", NEH.get());
 
-        pOut.put(PacketSendMessage.class, 0x0000);
-        pIn.put(0x0000, new PacketRecieveMessage());
+        pIn.put(0xFFFB, new PacketDownloadClientList());
+        pIn.put(0xFFFC, new PacketForwardPacket(null, null));
+        pIn.put(0xFFFD, new PacketRecieveMessage());
+        pIn.put(0xFFFE, new PacketDisconnectUnderstood());
+        pIn.put(0xFFFF, new PacketDisconnect());
+
+        pOut.put(PacketDownloadClientList.class, 0xFFFB);
+        pOut.put(PacketForwardPacket.class, 0xFFFC);
+        pOut.put(PacketSendMessage.class, 0xFFFD);
+        pOut.put(PacketDisconnectUnderstood.class, 0xFFFE);
+        pOut.put(PacketDisconnect.class, 0xFFFF);
     }
 
     /**
@@ -46,38 +58,54 @@ public class SubDataProtocol extends DataProtocol {
      * @throws IOException
      */
     public SubDataClient open(InetAddress address, int port) throws IOException {
-        return open(address, port, null);
+        return new SubDataClient(this, address, port);
     }
 
     /**
-     * Launch a SubData Client Instance
+     * Add a Protocol Version to the Supported Versions List
      *
-     * @param address Bind Address (or null for all)
-     * @param port Port Number
-     * @param shutdown Shutdown Event
-     * @throws IOException
+     * @param version Protocol Version
      */
-    public SubDataClient open(InetAddress address, int port, Runnable shutdown) throws IOException {
-        return new SubDataClient(this, address, port, shutdown);
+    public void addVersion(Version version) {
+        if (!this.version.contains(version)) this.version.add(version);
     }
 
     /**
-     * Add a Cipher to SubData
+     * Remove a Protocol Version from the Supported Versions List
+     *
+     * @param version Protocol Version
+     */
+    public void removeVersion(Version version) {
+        this.version.remove(version);
+    }
+
+    public Version[] getVersion() {
+        if (version.size() <= 0) {
+            return new Version[]{
+                    new Version(1)
+            };
+        } else {
+            return version.toArray(new Version[0]);
+        }
+    }
+
+    /**
+     * Register a Cipher to SubData
      *
      * @param cipher Cipher to Add
      * @param handle Handle to Bind
      */
-    public void addCipher(String handle, Cipher cipher) {
+    public void registerCipher(String handle, Cipher cipher) {
         if (Util.isNull(cipher)) throw new NullPointerException();
         if (!handle.equalsIgnoreCase("NULL")) ciphers.put(handle.toUpperCase(), cipher);
     }
 
     /**
-     * Remove a Cipher from SubData
+     * Unregister a Cipher from SubData
      *
      * @param handle Handle
      */
-    public void removeCipher(String handle) {
+    public void unregisterCipher(String handle) {
         if (!handle.equalsIgnoreCase("NULL")) ciphers.remove(handle.toUpperCase());
     }
 
@@ -89,7 +117,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void registerPacket(int id, PacketIn packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (id > 65535 || id <= 0) throw new IllegalArgumentException("Packet ID is not in range (1-65535): " + id);
+        if (id > 65530 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFFA): " + DebugUtil.toHex(0xFFFF, id));
         pIn.put(id, packet);
     }
 
@@ -102,7 +130,7 @@ public class SubDataProtocol extends DataProtocol {
         if (Util.isNull(packet)) throw new NullPointerException();
         List<Integer> search = new ArrayList<Integer>();
         search.addAll(pIn.keySet());
-        for (int id : search) if (pIn.get(id).equals(packet) && id > 0) {
+        for (int id : search) if (pIn.get(id).equals(packet) &&  id < 65530) {
             pIn.remove(id);
         }
     }
@@ -115,7 +143,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void registerPacket(int id, Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (id > 65535 || id <= 0) throw new IllegalArgumentException("Packet ID is not in range (1-65535): " + id);
+        if (id > 65530 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFFA): " + DebugUtil.toHex(0xFFFF, id));
         pOut.put(packet, id);
     }
 
@@ -126,7 +154,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void unregisterPacket(Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (pOut.keySet().contains(packet) && pOut.get(packet) > 0) pOut.remove(packet);
+        if (pOut.keySet().contains(packet) && pOut.get(packet) < 65530) pOut.remove(packet);
     }
 
     /**

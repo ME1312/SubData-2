@@ -19,7 +19,7 @@ public interface PacketObjectIn extends PacketStreamIn {
      * @param data Data Object
      * @throws Throwable
      */
-    void receive(SubDataClient client, YAMLSection data);
+    void receive(SubDataClient client, YAMLSection data) throws Throwable;
 
     @Override
     default void receive(SubDataClient client, InputStream data) throws Throwable {

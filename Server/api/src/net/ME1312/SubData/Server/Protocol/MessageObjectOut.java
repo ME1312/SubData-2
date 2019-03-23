@@ -18,11 +18,12 @@ public interface MessageObjectOut extends MessageStreamOut {
      * @param client Client sending
      * @return Data
      */
-    YAMLSection send(DataClient client);
+    YAMLSection send(DataClient client) throws Throwable;
 
     @Override
     default void send(DataClient client, OutputStream data) throws Throwable {
         YAMLSection output = send(client);
-        if (output != null) MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
+        if (output == null) output = new YAMLSection();
+        MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
     }
 }

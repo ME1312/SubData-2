@@ -18,11 +18,12 @@ public interface PacketObjectOut extends PacketStreamOut {
      * @param client Client sending
      * @return Data
      */
-    YAMLSection send(SubDataClient client);
+    YAMLSection send(SubDataClient client) throws Throwable;
 
     @Override
     default void send(SubDataClient client, OutputStream data) throws Throwable {
         YAMLSection output = send(client);
-        if (output != null) MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
+        if (output == null) output = new YAMLSection();
+        MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
     }
 }
