@@ -103,12 +103,12 @@
                             <goal>javadoc</goal>
                         </goals>
                         <configuration>
-                            <windowtitle>SubData Server API Javadoc</windowtitle>
-                            <doctitle>SubData Server API Javadoc</doctitle>
+                            <windowtitle>SubData ServerAPI Javadoc</windowtitle>
+                            <doctitle>SubData ServerAPI Javadoc</doctitle>
                             <show>public</show>
-                            <destDir></destDir>
-                            <outputDirectory>../../Javadoc/ServerAPI</outputDirectory>
-                            <reportOutputDirectory>../../Javadoc/ServerAPI</reportOutputDirectory>
+                            <destDir>./</destDir>
+                            <outputDirectory>${basedir}/../../Javadoc/ServerAPI</outputDirectory>
+                            <reportOutputDirectory>${basedir}/../../Javadoc/ServerAPI</reportOutputDirectory>
                             <additionalOptions>-Xdoclint:none</additionalOptions>
                             <links>
                                 <link>https://src.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiUtil/</link>
