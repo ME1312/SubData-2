@@ -116,7 +116,7 @@ public abstract class DataProtocol {
      *
      * @param address Address to deny
      */
-    public void denyConnection(String address) {
+    public void unwhitelist(String address) {
         if (Util.isNull(address)) throw new NullPointerException();
         whitelist.remove(address);
     }

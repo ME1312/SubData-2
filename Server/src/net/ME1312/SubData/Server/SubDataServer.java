@@ -89,7 +89,7 @@ public class SubDataServer extends DataServer {
      */
     private SubDataClient addClient(Socket socket) throws IOException {
         if (Util.isNull(socket)) throw new NullPointerException();
-        if (checkConnection(socket.getInetAddress())) {
+        if (isWhitelisted(socket.getInetAddress())) {
             UUID id = Util.getNew(clients.keySet(), UUID::randomUUID);
             SubDataClient client = new SubDataClient(this, id, socket);
 

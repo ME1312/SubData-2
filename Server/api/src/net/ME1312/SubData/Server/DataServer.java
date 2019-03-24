@@ -105,7 +105,7 @@ public abstract class DataServer {
         whitelist.put(address, true);
     }
 
-    boolean checkConnection(InetAddress address) {
+    boolean isWhitelisted(InetAddress address) {
         List<String> whitelist = new ArrayList<String>();
         whitelist.addAll(getProtocol().whitelist);
         for (String next : this.whitelist.keySet()) if (this.whitelist.get(next)) {
