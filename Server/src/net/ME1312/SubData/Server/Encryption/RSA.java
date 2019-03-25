@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.SocketException;
 import java.nio.file.Files;
 import java.security.*;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
     private static final String CIPHER_SPEC = "RSA/ECB/PKCS1Padding";
 
     // Process input/output streams in chunks
-    private static final int BUFFER_SIZE = 1024;
+    private final int BUFFER_SIZE;
 
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
@@ -81,6 +82,7 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
             kf = KeyFactory.getInstance("RSA");
             this.publicKey = kf.generatePublic(ks2);
         }
+        BUFFER_SIZE = (keyLength / 8) - 11;
     }
 
     /**
@@ -95,6 +97,7 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
         KeyFactory kf = KeyFactory.getInstance("RSA");
         this.privateKey = null;
         this.publicKey = kf.generatePublic(ks);
+        BUFFER_SIZE = (((RSAPublicKey) this.publicKey).getModulus().bitLength() / 8) - 11;
     }
 
     @Override

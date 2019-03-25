@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server;
 
-import net.ME1312.Galaxi.Library.Config.YAMLSection;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 
 /**
  * Serializable Client Handler Layout Class
@@ -12,5 +12,5 @@ public interface SerializableClientHandler extends ClientHandler {
      *
      * @return Serialized Object
      */
-    YAMLSection forSubData();
+    ObjectMap<String> forSubData();
 }

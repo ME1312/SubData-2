@@ -2,7 +2,7 @@ package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
-import net.ME1312.Galaxi.Library.Config.YAMLSection;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.SubData.Client.Library.DisconnectReason;
 import net.ME1312.SubData.Client.Protocol.MessageOut;
@@ -67,14 +67,14 @@ public abstract class DataClient {
      * @param id Client ID
      * @return Client
      */
-    public abstract void getClient(UUID id, Callback<YAMLSection> callback);
+    public abstract void getClient(UUID id, Callback<ObjectMap<String>> callback);
 
     /**
      * Grabs all the Clients on the Network
      *
      * @return Client Map
      */
-    public abstract void getClients(Callback<Map<UUID, ? extends YAMLSection>> callback);
+    public abstract void getClients(Callback<Map<UUID, ? extends ObjectMap<String>>> callback);
 
     /**
      * Send a message to the Server

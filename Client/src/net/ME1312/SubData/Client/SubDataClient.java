@@ -2,8 +2,8 @@ package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
-import net.ME1312.Galaxi.Library.Config.YAMLSection;
 import net.ME1312.Galaxi.Library.Container;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Encryption.NEH;
@@ -18,10 +18,7 @@ import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Client.Protocol.Initial.InitialPacket;
 import net.ME1312.SubData.Client.Protocol.Initial.InitialProtocol;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketDisconnect;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketDisconnectUnderstood;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketForwardPacket;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketSendMessage;
+import net.ME1312.SubData.Client.Protocol.Internal.*;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -357,13 +354,13 @@ public class SubDataClient extends DataClient {
     }
 
     @Override
-    public void getClient(UUID id, Callback<YAMLSection> callback) {
+    public void getClient(UUID id, Callback<ObjectMap<String>> callback) {
         if (Util.isNull(id, callback)) throw new NullPointerException();
         StackTraceElement[] origin = new Exception().getStackTrace();
         sendPacket(new PacketDownloadClientList(id, data -> {
-            YAMLSection serialized = null;
+            ObjectMap<String> serialized = null;
             if (data.contains(id.toString())) {
-                serialized = data.getSection(id.toString());
+                serialized = data.getMap(id.toString());
             }
 
             try {
@@ -377,13 +374,13 @@ public class SubDataClient extends DataClient {
     }
 
     @Override
-    public void getClients(Callback<Map<UUID, ? extends YAMLSection>> callback) {
+    public void getClients(Callback<Map<UUID, ? extends ObjectMap<String>>> callback) {
         if (Util.isNull(callback)) throw new NullPointerException();
         StackTraceElement[] origin = new Exception().getStackTrace();
         sendPacket(new PacketDownloadClientList(data -> {
-            HashMap<UUID, YAMLSection> serialized = new HashMap<UUID, YAMLSection>();
+            HashMap<UUID, ObjectMap<String>> serialized = new HashMap<UUID, ObjectMap<String>>();
             for (String id : data.getKeys()) {
-                serialized.put(UUID.fromString(id), data.getSection(id));
+                serialized.put(UUID.fromString(id), data.getMap(id));
             }
 
             try {

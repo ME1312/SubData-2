@@ -5,7 +5,7 @@ import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.DebugUtil;
 import net.ME1312.SubData.Client.Protocol.Internal.*;
-import net.ME1312.SubData.Client.Protocol.PacketDownloadClientList;
+import net.ME1312.SubData.Client.Protocol.Internal.PacketDownloadClientList;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 

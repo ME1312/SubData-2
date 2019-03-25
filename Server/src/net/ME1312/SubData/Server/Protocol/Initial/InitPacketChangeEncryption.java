@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Protocol.Initial;
 
-import net.ME1312.Galaxi.Library.Config.YAMLSection;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.*;
@@ -17,13 +17,13 @@ import java.util.HashMap;
 /**
  * Initial Packet for Changing Encryption Class
  */
-public final class InitPacketChangeEncryption implements InitialPacket, PacketIn, PacketObjectOut {
+public final class InitPacketChangeEncryption implements InitialPacket, PacketIn, PacketObjectOut<Integer> {
     static HashMap<SubDataClient, Integer> levels = new HashMap<SubDataClient, Integer>();
 
     @Override
-    public YAMLSection send(SubDataClient client) throws Throwable {
+    public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
-            YAMLSection data = new YAMLSection();
+            ObjectMap<Integer> data = new ObjectMap<Integer>();
             ArrayList<SubDataClient> tmp = new ArrayList<SubDataClient>();
             tmp.addAll(levels.keySet());
             for (SubDataClient next : tmp) if (next.isClosed()) levels.remove(next);
@@ -45,12 +45,12 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketIn
             }
 
             if (next != null && next.name() != null) {
-                data.set("e", next.name().getName());
-                if (next.get() != null) data.set("k", next.get());
+                data.set(0x0000, next.name().getName());
+                if (next.get() != null) data.set(0x0001, next.get());
                 Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client, next.name());
                 return data;
             } else {
-                DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + data.getRawString("e") + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getServer().getProtocol()));
+                DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + ciphers[i] + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getServer().getProtocol()));
                 Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.ENCRYPTION_MISMATCH);
                 return null;
             }
@@ -68,7 +68,7 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketIn
             if (i < ((cipher.contains("/"))?cipher.split("/"):new String[]{cipher}).length) {
                 client.sendPacket(this);
             } else {
-                client.sendPacket(new InitPacketChangeProtocol());
+                client.sendPacket(new InitPacketPostDeclaration());
             }
         }
     }

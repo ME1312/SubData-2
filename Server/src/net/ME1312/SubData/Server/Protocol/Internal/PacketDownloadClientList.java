@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Config.YAMLSection;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * Download Client List Packet
  */
-public class PacketDownloadClientList implements PacketObjectOut, PacketObjectIn {
+public class PacketDownloadClientList implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
     private String tracker;
     private UUID request;
 
@@ -29,23 +29,23 @@ public class PacketDownloadClientList implements PacketObjectOut, PacketObjectIn
     }
 
     @Override
-    public YAMLSection send(SubDataClient client) throws Throwable {
+    public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
         Map<UUID, ? extends SubDataClient> clients = client.getServer().getClients();
-        YAMLSection response = new YAMLSection();
-        YAMLSection data = new YAMLSection();
+        ObjectMap<Integer> response = new ObjectMap<Integer>();
+        ObjectMap<String> data = new ObjectMap<String>();
 
         for (UUID id : clients.keySet()) if (request == null || request == id) {
             data.set(id.toString(), (clients.get(id).getHandler() instanceof SerializableClientHandler)? Util.getDespiteException(((SerializableClientHandler) clients.get(id).getHandler())::forSubData, null):null);
         }
 
-        if (tracker != null) response.set("t", tracker);
-        response.set("r", data);
+        if (tracker != null) response.set(0x0000, tracker);
+        response.set(0x0001, data);
         return response;
     }
 
     @Override
-    public void receive(SubDataClient client, YAMLSection data) throws Throwable {
-        client.sendPacket(new PacketDownloadClientList((data.contains("t"))?data.getRawString("t"):null, (data.contains("id"))?data.getUUID("id"):null));
+    public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
+        client.sendPacket(new PacketDownloadClientList((data.contains(0x0000))?data.getRawString(0x0000):null, (data.contains(0x0001))?data.getUUID(0x0001):null));
     }
 
     @Override

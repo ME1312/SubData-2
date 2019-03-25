@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Client.Protocol;
 
-import net.ME1312.Galaxi.Library.Config.YAMLSection;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.SubData.Client.Library.MessagePackHandler;
 import net.ME1312.SubData.Client.SubDataClient;
 import org.msgpack.core.MessagePack;
@@ -9,8 +9,10 @@ import java.io.InputStream;
 
 /**
  * Packet Object In Layout Class
+ *
+ * @param <K> Key Type
  */
-public interface PacketObjectIn extends PacketStreamIn {
+public interface PacketObjectIn<K> extends PacketStreamIn {
 
     /**
      * Receives the incoming Packet
@@ -19,7 +21,7 @@ public interface PacketObjectIn extends PacketStreamIn {
      * @param data Data Object
      * @throws Throwable
      */
-    void receive(SubDataClient client, YAMLSection data) throws Throwable;
+    void receive(SubDataClient client, ObjectMap<K> data) throws Throwable;
 
     @Override
     default void receive(SubDataClient client, InputStream data) throws Throwable {
