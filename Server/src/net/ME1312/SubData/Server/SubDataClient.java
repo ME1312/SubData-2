@@ -45,6 +45,7 @@ public class SubDataClient extends DataClient {
     private LinkedList<PacketOut> prequeue;
     private OutputStream out;
     private Cipher cipher = NEH.get();
+    private int cipherlevel = 0;
     private SubDataServer subdata;
     private ConnectionState state;
     private Timer timeout;
@@ -211,6 +212,7 @@ public class SubDataClient extends DataClient {
                 PipedInputStream data = new PipedInputStream(1024);
                 new Thread(() -> read(reset, data), "SubDataServer::Packet_Listener(" + address.toString() + ')').start();
 
+                // Step 2 // Decrypt the Data
                 PipedOutputStream forward = new PipedOutputStream(data);
                 cipher.decrypt(raw, forward);
                 forward.close();

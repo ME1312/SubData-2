@@ -11,30 +11,23 @@ import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Server.Protocol.PacketIn;
 import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * Initial Packet for Changing Encryption Class
  */
 public final class InitPacketChangeEncryption implements InitialPacket, PacketIn, PacketObjectOut<Integer> {
-    static HashMap<SubDataClient, Integer> levels = new HashMap<SubDataClient, Integer>();
 
     @Override
     public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
             ObjectMap<Integer> data = new ObjectMap<Integer>();
-            ArrayList<SubDataClient> tmp = new ArrayList<SubDataClient>();
-            tmp.addAll(levels.keySet());
-            for (SubDataClient next : tmp) if (next.isClosed()) levels.remove(next);
-            if (!levels.keySet().contains(client))
-                levels.put(client, 0);
 
             String cipher = Util.reflect(SubDataServer.class.getDeclaredField("cipher"), client.getServer());
             String[] ciphers = (cipher.contains("/"))?cipher.split("/"):new String[]{cipher};
             Cipher last = Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client);
             NamedContainer<Cipher, String> next;
-            int i = levels.get(client);
+            int i = Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client);
 
             if (i <= 0) {
                 next = new NamedContainer<>(Util.<HashMap<String, Cipher>>reflect(SubDataProtocol.class.getDeclaredField("ciphers"), client.getServer().getProtocol()).get(ciphers[0].toUpperCase()), null);
@@ -60,12 +53,12 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketIn
     @Override
     public void receive(SubDataClient client) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
-            int i = levels.get(client) + 1;
-            levels.put(client, i);
+            int level = Util.<Integer>reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client) + 1;
+            Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client, level);
             client.getSocket().getOutputStream().write('\u0018');
             client.getSocket().getOutputStream().flush();
             String cipher = Util.reflect(SubDataServer.class.getDeclaredField("cipher"), client.getServer());
-            if (i < ((cipher.contains("/"))?cipher.split("/"):new String[]{cipher}).length) {
+            if (level < ((cipher.contains("/"))?cipher.split("/"):new String[]{cipher}).length) {
                 client.sendPacket(this);
             } else {
                 client.sendPacket(new InitPacketPostDeclaration());

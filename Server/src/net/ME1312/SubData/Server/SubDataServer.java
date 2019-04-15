@@ -65,7 +65,7 @@ public class SubDataServer extends DataServer {
                     }
                 }
             }
-        }, "SubDataServer::Connection_Listener").start();
+        }, "SubDataServer::Connection_Listener(" + server.getLocalSocketAddress().toString() + ')').start();
     }
 
     /**

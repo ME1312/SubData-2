@@ -43,6 +43,7 @@ public class SubDataClient extends DataClient {
     private OutputStream out;
     private SubDataProtocol protocol;
     private Cipher cipher = NEH.get();
+    private int cipherlevel = 0;
     private ConnectionState state;
 
     SubDataClient(SubDataProtocol protocol, InetAddress address, int port) throws IOException {
@@ -192,7 +193,7 @@ public class SubDataClient extends DataClient {
 
                 // Step 3 // Parse the SubData Packet Formatting
                 PipedInputStream data = new PipedInputStream(1024);
-                new Thread(() -> read(reset, data), "SubDataClient::Packet_Listener").start();
+                new Thread(() -> read(reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalAddress().toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
                 PipedOutputStream forward = new PipedOutputStream(data);
@@ -212,7 +213,7 @@ public class SubDataClient extends DataClient {
                     e1.printStackTrace();
                 }
             }
-        }, "SubDataClient::Data_Listener").start();
+        }, "SubDataClient::Data_Listener(" + socket.getLocalAddress().toString() + ')').start();
     }
 
     private void write(PacketOut next, OutputStream data) {
@@ -257,7 +258,7 @@ public class SubDataClient extends DataClient {
                     if (next != null) {
                         PipedOutputStream data = new PipedOutputStream();
                         PipedInputStream raw = new PipedInputStream(data, 1024);
-                        new Thread(() -> write(next, data), "SubDataClient::Packet_Writer").start();
+                        new Thread(() -> write(next, data), "SubDataClient::Packet_Writer(" + socket.getLocalAddress().toString() + ')').start();
 
                         // Step 5 // Add Escapes to the Encrypted Data
                         OutputStream forward = new OutputStream() {
@@ -303,7 +304,7 @@ public class SubDataClient extends DataClient {
                     else queue = null;
                 }
             } else queue = null;
-        }, "SubDataClient::Data_Writer").start();
+        }, "SubDataClient::Data_Writer(" + socket.getLocalAddress().toString() + ')').start();
     }
 
     /**
@@ -425,7 +426,7 @@ public class SubDataClient extends DataClient {
                 state = CLOSING;
                 if (!isClosed()) sendPacket(new PacketDisconnect());
 
-                Timer timeout = new Timer("SubDataClient::Disconnect_Timeout");
+                Timer timeout = new Timer("SubDataClient::Disconnect_Timeout(" + socket.getLocalAddress().toString() + ')');
                 timeout.schedule(new TimerTask() {
                     @Override
                     public void run() {

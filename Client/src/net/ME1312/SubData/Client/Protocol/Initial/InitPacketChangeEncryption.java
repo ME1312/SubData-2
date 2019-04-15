@@ -13,14 +13,12 @@ import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataClient;
 import net.ME1312.SubData.Client.SubDataProtocol;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * Initial Packet for Changing Encryption Class
  */
 public final class InitPacketChangeEncryption implements InitialPacket, PacketObjectIn<Integer>, PacketOut {
-    static HashMap<SubDataClient, Integer> levels = new HashMap<SubDataClient, Integer>();
 
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
@@ -28,15 +26,9 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketOb
         String key =       (data.contains(0x0001))?data.getRawString(0x0001):null;
 
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
-            ArrayList<SubDataClient> tmp = new ArrayList<SubDataClient>();
-            tmp.addAll(levels.keySet());
-            for (SubDataClient next : tmp) if (next.isClosed()) levels.remove(next);
-            if (!levels.keySet().contains(client))
-                levels.put(client, 0);
-
             Cipher last = Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client);
             Cipher next;
-            int i = levels.get(client);
+            int i = Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client);
 
             if (i <= 0) {
                 next = Util.<HashMap<String, Cipher>>reflect(SubDataProtocol.class.getDeclaredField("ciphers"), client.getProtocol()).get(cipher);
@@ -48,7 +40,7 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketOb
 
             if (next != null) {
                 Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client, next);
-                levels.put(client, levels.get(client) + 1);
+                Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client, Util.<Integer>reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client) + 1);
 
                 client.getSocket().getOutputStream().write('\u0018');
                 client.getSocket().getOutputStream().flush();
