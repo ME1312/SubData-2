@@ -25,7 +25,7 @@ public final class InitPacketChangeProtocol implements InitialPacket, PacketIn, 
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
             Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.READY);
 
-            Util.<Logger>reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()).info("Logged into " + client.getAddress().toString());
+            Util.<Logger>reflect(SubDataClient.class.getDeclaredField("log"), client).info("Logged into " + client.getAddress().toString());
 
             LinkedList<PacketOut> queue = Util.reflect(SubDataClient.class.getDeclaredField("prequeue"), client);
             if (queue.size() > 0) {
@@ -38,7 +38,7 @@ public final class InitPacketChangeProtocol implements InitialPacket, PacketIn, 
             for (Callback<DataClient> next : events) try {
                 if (next != null) next.run(client);
             } catch (Throwable e) {
-                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), Util.reflect(SubDataClient.class.getDeclaredField("log"), client));
             }
         }
     }

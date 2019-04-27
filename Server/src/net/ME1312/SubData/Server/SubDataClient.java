@@ -29,6 +29,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.logging.Logger;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 import static net.ME1312.SubData.Server.Library.DisconnectReason.*;
@@ -37,7 +38,6 @@ import static net.ME1312.SubData.Server.Library.DisconnectReason.*;
  * SubData Client Class
  */
 public class SubDataClient extends DataClient {
-    private UUID id;
     private Socket socket;
     private InetSocketAddress address;
     private ClientHandler handler;
@@ -50,11 +50,9 @@ public class SubDataClient extends DataClient {
     private ConnectionState state;
     private Timer timeout;
 
-    SubDataClient(SubDataServer subdata, UUID id, Socket client) throws IOException {
-        super(id);
+    SubDataClient(SubDataServer subdata, Socket client) throws IOException {
         if (Util.isNull(subdata, client)) throw new NullPointerException();
         this.subdata = subdata;
-        this.id = id;
         state = PRE_INITIALIZATION;
         socket = client;
         out = client.getOutputStream();
@@ -68,7 +66,7 @@ public class SubDataClient extends DataClient {
                 if (state.asInt() < READY.asInt()) try {
                     close(INITIALIZATION_TIMEOUT);
                 } catch (IOException e) {
-                    DebugUtil.logException(e, subdata.protocol.log);
+                    DebugUtil.logException(e, subdata.log);
                 }
             }
         }, 15000);
@@ -97,7 +95,7 @@ public class SubDataClient extends DataClient {
 
             // Step 4 // Create a detached data forwarding InputStream
             if (state != CLOSED && id >= 0 && version >= 0) {
-                try (InputStream forward = new InputStream() {
+                InputStream forward = new InputStream() {
                     boolean open = true;
 
                     @Override
@@ -114,40 +112,39 @@ public class SubDataClient extends DataClient {
                         open = false;
                         while (data.read() != -1);
                     }
-                }) {
-                    HashMap<Integer, PacketIn> pIn = (state.asInt() >= READY.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
-                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-                    PacketIn packet = pIn.get(id);
-                    if (!packet.isCompatable(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                };
+                HashMap<Integer, PacketIn> pIn = (state.asInt() >= READY.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
+                if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                PacketIn packet = pIn.get(id);
+                if (!packet.isCompatable(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
-                    // Step 5 // Invoke the Packet
-                    if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        throw new IllegalStateException("Only InitPacketDeclaration may be received during the PRE_INITIALIZATION stage");
-                    } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
-                        forward.close();
-                    } else {
-                        packet.receive(this);
-                        if (packet instanceof PacketStreamIn) {
-                            try {
+                // Step 5 // Invoke the Packet
+                if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
+                    DebugUtil.logException(new IllegalStateException("Only InitPacketDeclaration may be received during the PRE_INITIALIZATION stage"), subdata.log);
+                    close(PROTOCOL_MISMATCH);
+                } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
+                    forward.close();
+                } else {
+                    subdata.scheduler.run(() -> {
+                        try {
+                            packet.receive(this);
+
+                            if (packet instanceof PacketStreamIn) {
                                 ((PacketStreamIn) packet).receive(this, forward);
-                            } catch (Throwable e) {
-                                throw new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler");
-                            }
-                        } else {
-                            forward.close();
-                        }
-                    }
-                } catch (Throwable e) {
-                    DebugUtil.logException(e, subdata.protocol.log);
+                            } else forward.close();
+                        } catch (Throwable e) {
+                            DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), subdata.log);
 
-                    if (state.asInt() <= INITIALIZATION.asInt())
-                        close(PROTOCOL_MISMATCH); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
+                            if (state.asInt() <= INITIALIZATION.asInt())
+                                Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
+                        }
+                    });
                 }
             }
         } catch (Exception e) {
             if (!reset.get()) try {
                 if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
-                    DebugUtil.logException(e, subdata.protocol.log);
+                    DebugUtil.logException(e, subdata.log);
                 } if (!(e instanceof SocketException)) {
                     close(UNHANDLED_EXCEPTION);
                 } else close(CONNECTION_INTERRUPTED);
@@ -220,7 +217,7 @@ public class SubDataClient extends DataClient {
             } catch (Exception e) {
                 if (!reset.get()) try {
                     if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
-                        DebugUtil.logException(e, subdata.protocol.log);
+                        DebugUtil.logException(e, subdata.log);
                     } if (!(e instanceof SocketException)) {
                         if (e instanceof EncryptionException)
                             close(ENCRYPTION_MISMATCH);  // Classes that extend EncryptionException being thrown signify an ENCRYPTION_MISMATCH
@@ -258,11 +255,17 @@ public class SubDataClient extends DataClient {
             data.flush();
 
             // Step 3 // Invoke the Packet
-            if (next instanceof PacketStreamOut) {
-                ((PacketStreamOut) next).send(this, forward);
-            } else forward.close();
+            subdata.scheduler.run(() -> {
+                try {
+                    if (next instanceof PacketStreamOut) {
+                        ((PacketStreamOut) next).send(this, forward);
+                    } else forward.close();
+                } catch (Throwable e) {
+                    DebugUtil.logException(e, subdata.log);
+                }
+            });
         } catch (Throwable e) {
-            DebugUtil.logException(e, subdata.protocol.log);
+            DebugUtil.logException(e, subdata.log);
         }
         Util.isException(data::close);
     }
@@ -315,7 +318,7 @@ public class SubDataClient extends DataClient {
                     }
                 } catch (Throwable e) {
                     Util.isException(() -> queue.remove(0));
-                    DebugUtil.logException(e, subdata.protocol.log);
+                    DebugUtil.logException(e, subdata.log);
 
                     if (queue.size() > 0) SubDataClient.this.write();
                     else queue = null;
@@ -400,7 +403,7 @@ public class SubDataClient extends DataClient {
             for (ReturnCallback<DataClient, Boolean> next : events) try {
                 if (next != null) result = next.run(this) != Boolean.FALSE && result;
             } catch (Throwable e) {
-                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.protocol.log);
+                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.log);
             }
 
             if (result) {
@@ -414,7 +417,7 @@ public class SubDataClient extends DataClient {
                         if (!socket.isClosed()) try {
                             close(CLOSE_REQUESTED);
                         } catch (IOException e) {
-                            DebugUtil.logException(e, subdata.protocol.log);
+                            DebugUtil.logException(e, subdata.log);
                         }
                     }
                 }, 5000);
@@ -426,7 +429,7 @@ public class SubDataClient extends DataClient {
             if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
             state = CLOSED;
             if (reason != CLOSE_REQUESTED) {
-                DebugUtil.logException(new SocketException("Connection closed: " + reason), subdata.protocol.log);
+                DebugUtil.logException(new SocketException("Connection closed: " + reason), subdata.log);
             }
 
             if (!socket.isClosed()) getSocket().close();
@@ -436,13 +439,16 @@ public class SubDataClient extends DataClient {
             }
             if (subdata.getClients().values().contains(this)) subdata.removeClient(this);
 
-            LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = on.closed;
-            on.closed = new LinkedList<>();
-            for (Callback<NamedContainer<DisconnectReason, DataClient>> next : events) try {
-                if (next != null) next.run(new NamedContainer<>(reason, this));
-            } catch (Throwable e) {
-                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.protocol.log);
-            }
+            final DisconnectReason freason = reason;
+            subdata.scheduler.run(() -> {
+                LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = on.closed;
+                on.closed = new LinkedList<>();
+                for (Callback<NamedContainer<DisconnectReason, DataClient>> next : events) try {
+                    if (next != null) next.run(new NamedContainer<>(freason, this));
+                } catch (Throwable e) {
+                    DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.log);
+                }
+            });
         }
     }
 

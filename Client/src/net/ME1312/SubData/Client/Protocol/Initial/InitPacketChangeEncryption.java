@@ -46,7 +46,7 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketOb
                 client.getSocket().getOutputStream().flush();
                 client.sendPacket(this);
             } else {
-                DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + cipher + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+                DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + cipher + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataClient.class.getDeclaredField("log"), client));
                 Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.ENCRYPTION_MISMATCH);
             }
         }

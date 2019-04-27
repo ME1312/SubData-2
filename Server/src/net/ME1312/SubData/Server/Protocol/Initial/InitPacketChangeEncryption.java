@@ -43,7 +43,7 @@ public final class InitPacketChangeEncryption implements InitialPacket, PacketIn
                 Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client, next.name());
                 return data;
             } else {
-                DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + ciphers[i] + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getServer().getProtocol()));
+                DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + ciphers[i] + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()));
                 Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.ENCRYPTION_MISMATCH);
                 return null;
             }

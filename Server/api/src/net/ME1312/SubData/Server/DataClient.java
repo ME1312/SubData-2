@@ -60,11 +60,6 @@ public abstract class DataClient {
         }
     }
 
-    DataClient(UUID id) {
-        if (Util.isNull(id)) throw new NullPointerException();
-        this.id = id;
-    }
-
     /**
      * Send a message to the Client
      *

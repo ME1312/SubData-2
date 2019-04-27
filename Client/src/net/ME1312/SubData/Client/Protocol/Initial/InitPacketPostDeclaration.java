@@ -34,11 +34,11 @@ public final class InitPacketPostDeclaration implements InitialPacket, PacketObj
                     Util.reflect(DataClient.class.getDeclaredField("id"), client, clientID);
                     client.sendPacket(this);
                 } else {
-                    DebugUtil.logException(new IllegalArgumentException("Protocol version mismatch: [" + version + "] is not one of " + versions.toString()), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+                    DebugUtil.logException(new IllegalArgumentException("Protocol version mismatch: [" + version + "] is not one of " + versions.toString()), Util.reflect(SubDataClient.class.getDeclaredField("log"), client));
                     Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.PROTOCOL_MISMATCH);
                 }
             } else {
-                DebugUtil.logException(new IllegalArgumentException("Protocol mismatch: [" + name + "] != [" + client.getProtocol().getName() + "]"), Util.reflect(SubDataProtocol.class.getDeclaredField("log"), client.getProtocol()));
+                DebugUtil.logException(new IllegalArgumentException("Protocol mismatch: [" + name + "] != [" + client.getProtocol().getName() + "]"), Util.reflect(SubDataClient.class.getDeclaredField("log"), client));
                 Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), client, DisconnectReason.PROTOCOL_MISMATCH);
             }
         }

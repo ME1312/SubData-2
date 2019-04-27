@@ -1,5 +1,7 @@
 package net.ME1312.SubData.Client;
 
+import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.Encryption.NEH;
@@ -25,16 +27,11 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
     ArrayList<Version> version = new ArrayList<Version>();
     String name;
-    Logger log;
 
     /**
      * Create a new Protocol
-     *
-     * @param logger SubData Log Channel
      */
-    public SubDataProtocol(Logger logger) {
-        log = logger;
-
+    public SubDataProtocol() {
         ciphers.put("NULL", NEH.get());
         ciphers.put("NONE", NEH.get());
 
@@ -54,12 +51,26 @@ public class SubDataProtocol extends DataProtocol {
     /**
      * Launch a SubData Client Instance
      *
+     * @param scheduler Event Scheduler
+     * @param logger Network Logger
      * @param address Bind Address (or null for all)
      * @param port Port Number
      * @throws IOException
      */
-    public SubDataClient open(InetAddress address, int port) throws IOException {
-        return new SubDataClient(this, address, port);
+    public SubDataClient open(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
+        return new SubDataClient(this, scheduler, logger, address, port);
+    }
+
+    /**
+     * Launch a SubData Client Instance
+     *
+     * @param logger Network Logger
+     * @param address Bind Address (or null for all)
+     * @param port Port Number
+     * @throws IOException
+     */
+    public SubDataClient open(Logger logger, InetAddress address, int port) throws IOException {
+        return open(Runnable::run, logger, address, port);
     }
 
     /**
