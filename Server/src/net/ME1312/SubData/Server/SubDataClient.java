@@ -232,20 +232,21 @@ public class SubDataClient extends DataClient {
 
     private void write(PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
-        try (OutputStream forward = new OutputStream() {
-            boolean open = true;
+        try {
+            OutputStream forward = new OutputStream() {
+                boolean open = true;
 
-            @Override
-            public void write(int b) throws IOException {
-                if (open) data.write(b);
-            }
+                @Override
+                public void write(int b) throws IOException {
+                    if (open) data.write(b);
+                }
 
-            @Override
-            public void close() throws IOException {
-                open = false;
-                Util.isException(data::close);
-            }
-        }) {
+                @Override
+                public void close() throws IOException {
+                    open = false;
+                    Util.isException(data::close);
+                }
+            };
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= READY.asInt())?subdata.protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
             if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException("Could not find ID for packet: " + next.getClass().getCanonicalName());
@@ -263,7 +264,7 @@ public class SubDataClient extends DataClient {
                     } else forward.close();
                 } catch (Throwable e) {
                     DebugUtil.logException(e, subdata.log);
-                    Util.isException(data::close);
+                    Util.isException(forward::close);
                 }
             });
         } catch (Throwable e) {
