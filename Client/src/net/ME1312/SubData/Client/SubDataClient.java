@@ -235,6 +235,7 @@ public class SubDataClient extends DataClient {
             @Override
             public void close() throws IOException {
                 open = false;
+                Util.isException(data::close);
             }
         }) {
             // Step 2 // Write the Packet Metadata
@@ -254,12 +255,13 @@ public class SubDataClient extends DataClient {
                     } else forward.close();
                 } catch (Throwable e) {
                     DebugUtil.logException(e, log);
+                    Util.isException(data::close);
                 }
             });
         } catch (Throwable e) {
             DebugUtil.logException(e, log);
+            Util.isException(data::close);
         }
-        Util.isException(data::close);
     }
     void write() {
         if (queue != null && !socket.isClosed()) new Thread(() -> {
