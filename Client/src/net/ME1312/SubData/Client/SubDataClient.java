@@ -87,12 +87,11 @@ public class SubDataClient extends DataClient {
 
             // Step 4 // Create a detached data forwarding InputStream
             if (state != CLOSED && id >= 0 && version >= 0) {
+                Container<Boolean> open = new Container<>(true);
                 InputStream forward = new InputStream() {
-                    boolean open = true;
-
                     @Override
                     public int read() throws IOException {
-                        if (open) {
+                        if (open.get()) {
                             int b = data.read();
                             if (b < 0) close();
                             return b;
@@ -101,7 +100,7 @@ public class SubDataClient extends DataClient {
 
                     @Override
                     public void close() throws IOException {
-                        open = false;
+                        open.set(false);
                         while (data.read() != -1);
                     }
                 };
@@ -131,6 +130,7 @@ public class SubDataClient extends DataClient {
                                 Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
                         }
                     });
+                    while (open.get()) Thread.sleep(125);
                 }
             }
         } catch (Exception e) {
@@ -225,17 +225,16 @@ public class SubDataClient extends DataClient {
     private void write(PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
         try {
+            Container<Boolean> open = new Container<>(true);
             OutputStream forward = new OutputStream() {
-                boolean open = true;
-
                 @Override
                 public void write(int b) throws IOException {
-                    if (open) data.write(b);
+                    if (open.get()) data.write(b);
                 }
 
                 @Override
                 public void close() throws IOException {
-                    open = false;
+                    open.set(false);
                     Util.isException(data::close);
                 }
             };
@@ -259,6 +258,7 @@ public class SubDataClient extends DataClient {
                     Util.isException(forward::close);
                 }
             });
+            while (open.get()) Thread.sleep(125);
         } catch (Throwable e) {
             DebugUtil.logException(e, log);
             Util.isException(data::close);
