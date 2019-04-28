@@ -104,33 +104,40 @@ public class SubDataClient extends DataClient {
                         while (data.read() != -1);
                     }
                 };
-                HashMap<Integer, PacketIn> pIn = (state.asInt() >= READY.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
-                if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-                PacketIn packet = pIn.get(id);
-                if (!packet.isCompatable(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-
-                // Step 5 // Invoke the Packet
-                if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                    DebugUtil.logException(new IllegalStateException("Only InitPacketDeclaration may be received during the PRE_INITIALIZATION stage"), log);
+                if (state == PRE_INITIALIZATION && id != 0x0000) {
+                    DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), log);
                     close(PROTOCOL_MISMATCH);
-                } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
-                    forward.close();
+                } else if (state == CLOSING && id != 0xFFFE) {
+                    forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
-                    scheduler.run(() -> {
-                        try {
-                            packet.receive(this);
+                    HashMap<Integer, PacketIn> pIn = (state.asInt() >= READY.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
+                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    PacketIn packet = pIn.get(id);
+                    if (!packet.isCompatable(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
-                            if (packet instanceof PacketStreamIn) {
-                                ((PacketStreamIn) packet).receive(this, forward);
-                            } else forward.close();
-                        } catch (Throwable e) {
-                            DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), log);
+                    // Step 5 // Invoke the Packet
+                    if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
+                        DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + ']'), log);
+                        close(PROTOCOL_MISMATCH);
+                    } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
+                        forward.close(); // Suppress other packets during the CLOSING stage
+                    } else {
+                        scheduler.run(() -> {
+                            try {
+                                packet.receive(this);
 
-                            if (state.asInt() <= INITIALIZATION.asInt())
-                                Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
-                        }
-                    });
-                    while (open.get()) Thread.sleep(125);
+                                if (packet instanceof PacketStreamIn) {
+                                    ((PacketStreamIn) packet).receive(this, forward);
+                                } else forward.close();
+                            } catch (Throwable e) {
+                                DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), log);
+
+                                if (state.asInt() <= INITIALIZATION.asInt())
+                                    Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
+                            }
+                        });
+                        while (open.get()) Thread.sleep(125);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -199,7 +206,7 @@ public class SubDataClient extends DataClient {
 
                 // Step 3 // Parse the SubData Packet Formatting
                 PipedInputStream data = new PipedInputStream(1024);
-                new Thread(() -> read(reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalAddress().toString() + ')').start();
+                new Thread(() -> read(reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
                 PipedOutputStream forward = new PipedOutputStream(data);
@@ -219,7 +226,7 @@ public class SubDataClient extends DataClient {
                     e1.printStackTrace();
                 }
             }
-        }, "SubDataClient::Data_Listener(" + socket.getLocalAddress().toString() + ')').start();
+        }, "SubDataClient::Data_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
     }
 
     private void write(PacketOut next, OutputStream data) {
@@ -240,8 +247,8 @@ public class SubDataClient extends DataClient {
             };
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= READY.asInt())?protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
-            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException("Could not find ID for packet: " + next.getClass().getCanonicalName());
-            if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException("Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
+            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(getAddress().toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
+            if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(getAddress().toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
             data.write(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort((short) (pOut.get(next.getClass()) + Short.MIN_VALUE)).array());
             data.write(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort((short) (next.version() + Short.MIN_VALUE)).array());
@@ -273,7 +280,7 @@ public class SubDataClient extends DataClient {
                     if (next != null) {
                         PipedOutputStream data = new PipedOutputStream();
                         PipedInputStream raw = new PipedInputStream(data, 1024);
-                        new Thread(() -> write(next, data), "SubDataClient::Packet_Writer(" + socket.getLocalAddress().toString() + ')').start();
+                        new Thread(() -> write(next, data), "SubDataClient::Packet_Writer(" + socket.getLocalSocketAddress().toString() + ')').start();
 
                         // Step 5 // Add Escapes to the Encrypted Data
                         OutputStream forward = new OutputStream() {
@@ -313,13 +320,15 @@ public class SubDataClient extends DataClient {
                     }
                 } catch (Throwable e) {
                     Util.isException(() -> queue.remove(0));
-                    DebugUtil.logException(e, log);
+                    if (!(e instanceof SocketException)) { // Cut the write session short when socket issues occur
+                        DebugUtil.logException(e, log);
 
-                    if (queue.size() > 0) SubDataClient.this.write();
-                    else queue = null;
+                        if (queue.size() > 0) SubDataClient.this.write();
+                        else queue = null;
+                    } else queue = null;
                 }
             } else queue = null;
-        }, "SubDataClient::Data_Writer(" + socket.getLocalAddress().toString() + ')').start();
+        }, "SubDataClient::Data_Writer(" + socket.getLocalSocketAddress().toString() + ')').start();
     }
 
     /**
@@ -441,7 +450,7 @@ public class SubDataClient extends DataClient {
                 state = CLOSING;
                 if (!isClosed()) sendPacket(new PacketDisconnect());
 
-                Timer timeout = new Timer("SubDataClient::Disconnect_Timeout(" + socket.getLocalAddress().toString() + ')');
+                Timer timeout = new Timer("SubDataClient::Disconnect_Timeout(" + socket.getLocalSocketAddress().toString() + ')');
                 timeout.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -461,11 +470,10 @@ public class SubDataClient extends DataClient {
             if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
             state = CLOSED;
             if (reason != CLOSE_REQUESTED) {
-                DebugUtil.logException(new SocketException("Connection closed: " + reason), log);
-            }
+                log.warning("Disconnected from " + socket.getRemoteSocketAddress() + ": " + reason);
+            } else log.info("Disconnected from " + socket.getRemoteSocketAddress());
 
             socket.close();
-            log.info("Disconnected from " + socket.getRemoteSocketAddress());
 
             final DisconnectReason freason = reason;
             scheduler.run(() -> {

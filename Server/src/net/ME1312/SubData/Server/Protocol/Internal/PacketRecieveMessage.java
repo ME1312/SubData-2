@@ -2,6 +2,7 @@ package net.ME1312.SubData.Server.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
+import net.ME1312.SubData.Server.DataProtocol;
 import net.ME1312.SubData.Server.DataServer;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Protocol.MessageIn;
@@ -57,7 +58,7 @@ public class PacketRecieveMessage implements PacketStreamIn {
             }
         }
 
-        HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataServer.class.getDeclaredField("mIn"), client.getServer().getProtocol());
+        HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataProtocol.class.getDeclaredField("mIn"), client.getServer().getProtocol());
 
         if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + channel + ", " + handle + ", " + version + "]");
         if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [" + channel + ", " + handle + ", " + version + "]");

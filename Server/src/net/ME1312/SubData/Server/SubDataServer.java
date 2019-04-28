@@ -155,7 +155,6 @@ public class SubDataServer extends DataServer {
             SubDataClient client = clients.get(id);
             clients.remove(id);
             client.close();
-            log.info(client.getAddress().toString() + " has disconnected");
         }
     }
 
