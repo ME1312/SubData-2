@@ -15,16 +15,9 @@ public interface ClientHandler extends SubDataSerializable {
     DataClient[] getSubData();
 
     /**
-     * Link a SubData Client to this Object
+     * Unlink a SubData Client from this Object
      *
-     * @param client Client to Link
-     */
-    void addSubData(DataClient client);
-
-    /**
-     * Unlink a SubData Client to this Object
-     *
-     * @param client Client to Link
+     * @param client Client to Unlink
      */
     void removeSubData(DataClient client);
 

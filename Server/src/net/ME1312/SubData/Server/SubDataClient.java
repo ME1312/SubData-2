@@ -397,14 +397,14 @@ public class SubDataClient extends DataClient {
     }
 
     /**
-     * Sets the Handler
+     * Sets the Handler (should only be called by Handlers themselves)
      *
+     * @see ClientHandler
      * @param obj Handler
      */
     public void setHandler(ClientHandler obj) {
         if (handler != null && Arrays.asList(handler.getSubData()).contains(this)) handler.removeSubData(this);
         handler = obj;
-        if (handler != null && !Arrays.asList(handler.getSubData()).contains(this)) handler.addSubData(this);
     }
 
     public void close() throws IOException {
