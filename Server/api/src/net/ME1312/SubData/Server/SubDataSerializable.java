@@ -5,7 +5,7 @@ import net.ME1312.Galaxi.Library.Map.ObjectMap;
 /**
  * Serializable Client Handler Layout Class
  */
-public interface SerializableClientHandler extends ClientHandler {
+public interface SubDataSerializable {
 
     /**
      * Serialize this object for SubData

@@ -47,6 +47,7 @@ public class SubDataClient extends DataClient {
     private int cipherlevel = 0;
     private ConnectionState state;
     private Callback<Runnable> scheduler;
+    private Object[] constructor;
     private Logger log;
 
     SubDataClient(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port) throws IOException {
@@ -59,6 +60,12 @@ public class SubDataClient extends DataClient {
         this.out = socket.getOutputStream();
         this.queue = null;
         this.prequeue = new LinkedList<>();
+        this.constructor = new Object[]{
+                scheduler,
+                log,
+                address,
+                port
+        };
 
         log.info("Connected to " + socket.getRemoteSocketAddress());
         read();
@@ -433,6 +440,17 @@ public class SubDataClient extends DataClient {
 
     public InetSocketAddress getAddress() {
         return new InetSocketAddress(socket.getInetAddress(), socket.getPort());
+    }
+
+    /**
+     * Open an async data stream using the same connection info
+     *
+     * @return New SubData Channel
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public SubDataClient reopen() throws IOException {
+        return protocol.open((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3]);
     }
 
     public void close() throws IOException {

@@ -4,7 +4,6 @@ import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
-import net.ME1312.SubData.Server.SerializableClientHandler;
 import net.ME1312.SubData.Server.SubDataClient;
 
 import java.util.Map;
@@ -35,7 +34,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
         ObjectMap<String> data = new ObjectMap<String>();
 
         for (UUID id : clients.keySet()) if (request == null || request == id) {
-            data.set(id.toString(), (clients.get(id).getHandler() instanceof SerializableClientHandler)? Util.getDespiteException(((SerializableClientHandler) clients.get(id).getHandler())::forSubData, null):null);
+            data.set(id.toString(), Util.getDespiteException(clients.get(id).getHandler()::forSubData, null));
         }
 
         if (tracker != null) response.set(0x0000, tracker);

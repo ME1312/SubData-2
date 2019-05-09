@@ -402,9 +402,9 @@ public class SubDataClient extends DataClient {
      * @param obj Handler
      */
     public void setHandler(ClientHandler obj) {
-        if (handler != null && handler.getSubData() != null && equals(handler.getSubData())) handler.setSubData(null);
+        if (handler != null && Arrays.asList(handler.getSubData()).contains(this)) handler.removeSubData(this);
         handler = obj;
-        if (handler != null && (handler.getSubData() == null || !equals(handler.getSubData()))) handler.setSubData(this);
+        if (handler != null && !Arrays.asList(handler.getSubData()).contains(this)) handler.addSubData(this);
     }
 
     public void close() throws IOException {

@@ -1,20 +1,35 @@
 package net.ME1312.SubData.Server;
 
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
+
 /**
  * Client Handler Layout Class
  */
-public interface ClientHandler {
+public interface ClientHandler extends SubDataSerializable {
+
     /**
-     * Gets the SubData Client
+     * Gets the SubData Client Channels
      *
-     * @return SubData Client (or null if not linked)
+     * @return SubData Client Channel Array
      */
-    DataClient getSubData();
+    DataClient[] getSubData();
 
     /**
      * Link a SubData Client to this Object
      *
      * @param client Client to Link
      */
-    void setSubData(DataClient client);
+    void addSubData(DataClient client);
+
+    /**
+     * Unlink a SubData Client to this Object
+     *
+     * @param client Client to Link
+     */
+    void removeSubData(DataClient client);
+
+    @Override
+    default ObjectMap<String> forSubData() {
+        return null;
+    }
 }

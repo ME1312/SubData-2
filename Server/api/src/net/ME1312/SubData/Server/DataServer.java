@@ -7,6 +7,7 @@ import net.ME1312.Galaxi.Library.Util;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -137,6 +138,21 @@ public abstract class DataServer {
         if (Util.isNull(address)) throw new NullPointerException();
         whitelist.put(address, false);
     }
+
+    /**
+     * Open an async server socket using the same connection info
+     *
+     * @param port Port Number
+     * @return New SubData Channel
+     */
+    public abstract DataServer reopen(int port) throws IOException;
+
+    /**
+     * Open an async server socket using the same connection info
+     *
+     * @return New SubData Channel
+     */
+    public abstract DataServer reopen() throws IOException;
 
     /**
      * Drops all connections and close the SubData Listener

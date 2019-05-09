@@ -115,6 +115,13 @@ public abstract class DataClient {
     public abstract InetSocketAddress getAddress();
 
     /**
+     * Open an async data stream using the same connection info
+     *
+     * @return New SubData Channel
+     */
+    public abstract DataClient reopen() throws IOException;
+
+    /**
      * Closes the connection
      *
      * @throws IOException
