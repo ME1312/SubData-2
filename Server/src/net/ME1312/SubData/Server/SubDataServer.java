@@ -23,7 +23,6 @@ public class SubDataServer extends DataServer {
     private ServerSocket server;
     private String address;
     SubDataProtocol protocol;
-    ReturnCallback<Integer, Object[]> constructor;
     Callback<Runnable> scheduler;
     String cipher;
     Logger log;
@@ -39,18 +38,9 @@ public class SubDataServer extends DataServer {
             this.address = server.getLocalSocketAddress().toString();
             whitelist(address.getHostAddress());
         }
-
-        final String fc = cipher;
         this.protocol = protocol;
         this.scheduler = scheduler;
         this.log = log;
-        this.constructor = i -> new Object[] {
-                scheduler,
-                log,
-                address,
-                i,
-                fc
-        };
 
         this.cipher = cipher = (cipher != null)?cipher:"NULL"; // Validate Cipher
         String[] ciphers = (cipher.contains("/"))?cipher.split("/"):new String[]{cipher};
@@ -166,13 +156,6 @@ public class SubDataServer extends DataServer {
             clients.remove(id);
             client.close();
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public SubDataServer clone(int port) throws IOException {
-        Object[] opt = constructor.run(port);
-        return protocol.open((Callback<Runnable>) opt[0], (Logger) opt[1], (InetAddress) opt[2], (int) opt[3], (String) opt[4]);
     }
 
     public void close() throws IOException {

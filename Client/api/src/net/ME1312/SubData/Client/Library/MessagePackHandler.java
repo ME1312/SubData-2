@@ -85,7 +85,9 @@ public class MessagePackHandler {
             Map<Value, Value> map = value.asMapValue().map();
             simple = unpack(value.asMapValue());
         } else if (value.isArrayValue()) {
-            simple = value.asArrayValue().list();
+            LinkedList<Object> objects = new LinkedList<Object>();
+            for (Value v : value.asArrayValue().list()) objects.add(simplify(v, false));
+            simple = objects;
         } else if (value.isBooleanValue()) {
             simple = value.asBooleanValue().getBoolean();
         } else if (value.isFloatValue()) {

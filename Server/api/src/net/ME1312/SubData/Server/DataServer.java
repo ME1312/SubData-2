@@ -140,13 +140,6 @@ public abstract class DataServer {
     }
 
     /**
-     * Clone this SubData Server Instance on another port
-     *
-     * @param port Port Number
-     */
-    public abstract DataServer clone(int port) throws IOException;
-
-    /**
      * Drops all connections and close the SubData Listener
      *
      * @throws IOException
