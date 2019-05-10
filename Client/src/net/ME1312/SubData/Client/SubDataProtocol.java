@@ -58,7 +58,7 @@ public class SubDataProtocol extends DataProtocol {
      * @see SubDataClient#newChannel()
      * @throws IOException
      */
-    protected SubDataClient openChannel(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
+    protected SubDataClient sub(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
         return open(scheduler, logger, address, port);
     }
 

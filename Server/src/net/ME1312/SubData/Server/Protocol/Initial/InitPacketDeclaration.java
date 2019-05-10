@@ -9,7 +9,7 @@ import net.ME1312.SubData.Server.SubDataClient;
 /**
  * Initial Packet for Declaration Class
  */
-public final class InitPacketDeclaration implements InitialPacket, PacketIn, PacketOut {
+public final class InitPacketDeclaration implements InitialProtocol.Packet, PacketIn, PacketOut {
 
     @Override
     public void receive(SubDataClient client) throws Throwable {

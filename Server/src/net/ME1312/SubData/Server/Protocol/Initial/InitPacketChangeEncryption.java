@@ -16,7 +16,7 @@ import java.util.HashMap;
 /**
  * Initial Packet for Changing Encryption Class
  */
-public final class InitPacketChangeEncryption implements InitialPacket, PacketIn, PacketObjectOut<Integer> {
+public final class InitPacketChangeEncryption implements InitialProtocol.Packet, PacketIn, PacketObjectOut<Integer> {
 
     @Override
     public ObjectMap<Integer> send(SubDataClient client) throws Throwable {

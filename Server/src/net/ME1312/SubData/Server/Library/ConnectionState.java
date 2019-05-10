@@ -17,6 +17,12 @@ public enum ConnectionState {
     INITIALIZATION(1),
 
     /**
+     * This defines the state where apps can run their own initialization tasks<br/>
+     * <b>Only App-defined packets that implement InitialPacket should sent in this state</b>
+     */
+    POST_INITIALIZATION(4),
+
+    /**
      * This defines the state where the app-defined protocol is active and ready for use
      */
     READY(5),

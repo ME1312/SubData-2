@@ -47,7 +47,7 @@ public class MessagePackHandler {
         } else if (value instanceof Boolean) {
             return ValueFactory.newBoolean((boolean) value);
         } else if (value instanceof Number) {
-            if (((Number) value).doubleValue() == (double)(int) ((Number) value).doubleValue()) {
+            if (((Number) value).doubleValue() == (double)(long) ((Number) value).doubleValue()) {
                 return ValueFactory.newInteger(((Number) value).longValue());
             } else {
                 return ValueFactory.newFloat(((Number) value).doubleValue());
@@ -82,7 +82,6 @@ public class MessagePackHandler {
         if (value.isNilValue()) {
             simple = null;
         } else if (value.isMapValue()) {
-            Map<Value, Value> map = value.asMapValue().map();
             simple = unpack(value.asMapValue());
         } else if (value.isArrayValue()) {
             LinkedList<Object> objects = new LinkedList<Object>();

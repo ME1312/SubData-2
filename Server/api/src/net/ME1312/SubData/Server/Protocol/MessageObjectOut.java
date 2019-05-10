@@ -25,7 +25,7 @@ public interface MessageObjectOut<K> extends MessageStreamOut {
     @Override
     default void send(DataClient client, OutputStream data) throws Throwable {
         ObjectMap<K> output = send(client);
-        if (output == null) output = new ObjectMap<K>();
-        MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
+        if (output != null) MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
+        else data.close();
     }
 }

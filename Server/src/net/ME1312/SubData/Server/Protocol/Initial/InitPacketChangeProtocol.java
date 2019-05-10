@@ -1,44 +1,48 @@
 package net.ME1312.SubData.Server.Protocol.Initial;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
-import net.ME1312.SubData.Server.DataClient;
 import net.ME1312.SubData.Server.Library.ConnectionState;
-import net.ME1312.SubData.Server.Library.DebugUtil;
-import net.ME1312.SubData.Server.Protocol.PacketIn;
+import net.ME1312.SubData.Server.Protocol.PacketObjectIn;
+import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
 import net.ME1312.SubData.Server.Protocol.PacketOut;
 import net.ME1312.SubData.Server.SubDataClient;
-import net.ME1312.SubData.Server.SubDataProtocol;
-import net.ME1312.SubData.Server.SubDataServer;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.logging.Logger;
+
+import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 
 /**
  * Initial Packet for Changing Protocols Class
  */
-public final class InitPacketChangeProtocol implements InitialPacket, PacketIn, PacketOut {
+public final class InitPacketChangeProtocol implements InitialProtocol.Packet, InitialPacket, PacketObjectIn<Integer>, PacketObjectOut<Integer> {
+
     @Override
-    public void receive(SubDataClient client) throws Throwable {
-        if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
-            Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.READY);
+    public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
+        ObjectMap<Integer> data = new ObjectMap<Integer>();
+        if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == INITIALIZATION) {
+            data.set(0x0000, Util.<HashMap<ConnectionState, LinkedList<PacketOut>>>reflect(SubDataClient.class.getDeclaredField("statequeue"), client).keySet().contains(POST_INITIALIZATION));
+        }
+        return data;
+    }
 
-            Util.<Logger>reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()).info(client.getAddress().toString() + " has logged in");
+    @Override
+    public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
+        if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == INITIALIZATION) {
+            HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
 
-            LinkedList<PacketOut> queue = Util.reflect(SubDataClient.class.getDeclaredField("prequeue"), client);
-            if (queue.size() > 0) {
-                Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue);
-                Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+            if (data.getBoolean(0x0000)) {
+                Util.reflect(SubDataClient.class.getDeclaredField("state"), client, POST_INITIALIZATION);
+                if (queue.size() > 0) {
+                    Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(POST_INITIALIZATION));
+                    Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+                }
+            } else {
+                setReady(client, true);
             }
-
-            LinkedList<Callback<DataClient>> events = Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on);
-            Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on, new LinkedList<Callback<DataClient>>());
-            for (Callback<DataClient> next : events) try {
-                if (next != null) next.run(client);
-            } catch (Throwable e) {
-                DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), Util.reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()));
-            }
+        } else if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == POST_INITIALIZATION) {
+            setReady(client, true);
         }
     }
 

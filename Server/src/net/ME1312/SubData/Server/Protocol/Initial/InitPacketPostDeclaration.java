@@ -10,7 +10,7 @@ import net.ME1312.SubData.Server.SubDataClient;
 /**
  * Initial Packet for Post Declaration Class
  */
-public final class InitPacketPostDeclaration implements InitialPacket, PacketIn, PacketObjectOut<Integer> {
+public final class InitPacketPostDeclaration implements InitialProtocol.Packet, PacketIn, PacketObjectOut<Integer> {
     @Override
     public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
         ObjectMap<Integer> data = new ObjectMap<Integer>();

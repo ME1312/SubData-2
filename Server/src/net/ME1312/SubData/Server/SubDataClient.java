@@ -29,7 +29,6 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 import static net.ME1312.SubData.Server.Library.DisconnectReason.*;
@@ -42,7 +41,7 @@ public class SubDataClient extends DataClient {
     private InetSocketAddress address;
     private ClientHandler handler;
     private LinkedList<PacketOut> queue;
-    private LinkedList<PacketOut> prequeue;
+    private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
     private OutputStream out;
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
@@ -57,7 +56,7 @@ public class SubDataClient extends DataClient {
         socket = client;
         out = client.getOutputStream();
         queue = null;
-        prequeue = new LinkedList<>();
+        statequeue = new HashMap<>();
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
         timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
         timeout.schedule(new TimerTask() {
@@ -118,7 +117,7 @@ public class SubDataClient extends DataClient {
                 } else if (state == CLOSING && id != 0xFFFE) {
                     forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
-                    HashMap<Integer, PacketIn> pIn = (state.asInt() >= READY.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
+                    HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
                     if (!packet.isCompatable(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
@@ -254,7 +253,7 @@ public class SubDataClient extends DataClient {
                 }
             };
             // Step 2 // Write the Packet Metadata
-            HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= READY.asInt())?subdata.protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
+            HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
             if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(getAddress().toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
             if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(getAddress().toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
@@ -347,8 +346,10 @@ public class SubDataClient extends DataClient {
     public void sendPacket(PacketOut packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
         if (!isClosed()) {
-            if (state.asInt() < READY.asInt() && !(packet instanceof InitialPacket)) {
-                prequeue.add(packet);
+            if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
+                sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
+            } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
+                sendPacketLater(packet, READY);
             } else if (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) {
                 // do nothing
             } else {
@@ -363,6 +364,11 @@ public class SubDataClient extends DataClient {
                 if (init) write();
             }
         }
+    }
+    private void sendPacketLater(PacketOut packet, ConnectionState state) {
+        LinkedList<PacketOut> prequeue = (this.statequeue.keySet().contains(state))?this.statequeue.get(state):new LinkedList<PacketOut>();
+        prequeue.add(packet);
+        this.statequeue.put(state, prequeue);
     }
 
     public void sendMessage(MessageOut message) {

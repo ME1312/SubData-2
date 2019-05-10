@@ -11,7 +11,6 @@ import net.ME1312.SubData.Client.Library.DisconnectReason;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataClient;
-import net.ME1312.SubData.Client.SubDataProtocol;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.UUID;
 /**
  * Initial Packet for Post Declaration Class
  */
-public final class InitPacketPostDeclaration implements InitialPacket, PacketObjectIn<Integer>, PacketOut {
+public final class InitPacketPostDeclaration implements InitialProtocol.Packet, PacketObjectIn<Integer>, PacketOut {
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
         UUID clientID =      data.getUUID(0x0000);

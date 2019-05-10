@@ -30,4 +30,12 @@ public final class InitialProtocol {
         pOut.put(PacketDisconnectUnderstood.class, 0xFFFE);
         pOut.put(PacketDisconnect.class, 0xFFFF);
     }
+
+
+    /**
+     * InitialProtocol Packet Tag Class<br>
+     * Classes that implement this may be sent during the INITIALIZATION state
+     */
+    public interface Packet {
+    }
 }
