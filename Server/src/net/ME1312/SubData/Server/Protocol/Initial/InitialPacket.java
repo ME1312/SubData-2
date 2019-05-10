@@ -37,7 +37,7 @@ public interface InitialPacket {
 
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
             if (queue.size() > 0) {
-                Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue);
+                Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(READY));
                 if (flush) Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
             }
 
