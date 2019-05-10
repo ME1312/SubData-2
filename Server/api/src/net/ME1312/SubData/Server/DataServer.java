@@ -140,19 +140,11 @@ public abstract class DataServer {
     }
 
     /**
-     * Open an async server socket using the same connection info
+     * Clone this SubData Server Instance on another port
      *
      * @param port Port Number
-     * @return New SubData Channel
      */
-    public abstract DataServer reopen(int port) throws IOException;
-
-    /**
-     * Open an async server socket using the same connection info
-     *
-     * @return New SubData Channel
-     */
-    public abstract DataServer reopen() throws IOException;
+    public abstract DataServer clone(int port) throws IOException;
 
     /**
      * Drops all connections and close the SubData Listener

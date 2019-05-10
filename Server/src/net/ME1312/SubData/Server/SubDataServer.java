@@ -170,14 +170,9 @@ public class SubDataServer extends DataServer {
 
     @SuppressWarnings("unchecked")
     @Override
-    public SubDataServer reopen(int port) throws IOException {
+    public SubDataServer clone(int port) throws IOException {
         Object[] opt = constructor.run(port);
         return protocol.open((Callback<Runnable>) opt[0], (Logger) opt[1], (InetAddress) opt[2], (int) opt[3], (String) opt[4]);
-    }
-
-    @Override
-    public SubDataServer reopen() throws IOException {
-        return reopen(getSocket().getLocalPort());
     }
 
     public void close() throws IOException {

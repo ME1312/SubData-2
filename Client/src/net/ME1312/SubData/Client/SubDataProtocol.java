@@ -49,6 +49,20 @@ public class SubDataProtocol extends DataProtocol {
     }
 
     /**
+     * Override this to preform different setup for Client SubChannels
+     *
+     * @param scheduler Event Scheduler
+     * @param logger Network Logger
+     * @param address Bind Address (or null for all)
+     * @param port Port Number
+     * @see SubDataClient#newChannel()
+     * @throws IOException
+     */
+    protected SubDataClient openChannel(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
+        return open(scheduler, logger, address, port);
+    }
+
+    /**
      * Launch a SubData Client Instance
      *
      * @param scheduler Event Scheduler

@@ -442,15 +442,10 @@ public class SubDataClient extends DataClient {
         return new InetSocketAddress(socket.getInetAddress(), socket.getPort());
     }
 
-    /**
-     * Open an async data stream using the same connection info
-     *
-     * @return New SubData Channel
-     */
     @SuppressWarnings("unchecked")
     @Override
-    public SubDataClient reopen() throws IOException {
-        return protocol.open((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3]);
+    public SubDataClient newChannel() throws IOException {
+        return protocol.openChannel((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3]);
     }
 
     public void close() throws IOException {
