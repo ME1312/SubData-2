@@ -44,11 +44,11 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
             pending.write(b);
             switch (position) {
                 case 8:
-                    id_p2 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).getLong();
+                    id_p1 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
                     pending.reset();
                     break;
                 case 16:
-                    id_p1 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).getLong();
+                    id_p2 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
                     pending.reset();
                     break;
             }

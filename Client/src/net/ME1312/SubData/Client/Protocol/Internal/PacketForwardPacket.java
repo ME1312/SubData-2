@@ -33,8 +33,8 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
 
     @Override
     public void send(SubDataClient client, OutputStream data) throws Throwable {
-        data.write(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(id.getLeastSignificantBits()).array());
-        data.write(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(id.getMostSignificantBits()).array());
+        data.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).array());
+        data.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getLeastSignificantBits()).array());
         Util.reflect(SubDataClient.class.getDeclaredMethod("write", PacketOut.class, OutputStream.class), client, packet, data);
     }
 

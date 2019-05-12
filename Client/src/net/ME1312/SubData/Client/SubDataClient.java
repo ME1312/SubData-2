@@ -14,6 +14,7 @@ import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Client.Library.Exception.EndOfStreamException;
 import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Client.Library.Exception.IllegalPacketException;
+import net.ME1312.SubData.Client.Library.UnsignedDataHandler;
 import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Client.Protocol.Initial.InitialPacket;
@@ -82,11 +83,11 @@ public class SubDataClient extends DataClient {
                 pending.write(b);
                 switch (position) {
                     case 2:
-                        id = ((int) ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort()) + -Short.MIN_VALUE;
+                        id = (int) UnsignedDataHandler.fromUnsigned(pending.toByteArray());
                         pending.reset();
                         break;
                     case 4:
-                        version = ((int) ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).getShort()) + -Short.MIN_VALUE;
+                        version = (int) UnsignedDataHandler.fromUnsigned(pending.toByteArray());
                         pending.reset();
                         break;
                 }
@@ -257,8 +258,8 @@ public class SubDataClient extends DataClient {
             if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(getAddress().toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
             if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(getAddress().toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
-            data.write(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort((short) (pOut.get(next.getClass()) + Short.MIN_VALUE)).array());
-            data.write(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort((short) (next.version() + Short.MIN_VALUE)).array());
+            data.write(UnsignedDataHandler.toUnsigned((long) pOut.get(next.getClass()), 2));
+            data.write(UnsignedDataHandler.toUnsigned((long) next.version(), 2));
             data.flush();
 
             // Step 3 // Invoke the Packet
