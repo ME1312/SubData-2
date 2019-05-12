@@ -332,7 +332,7 @@ public class SubDataClient extends DataClient {
                     if (!(e instanceof SocketException)) { // Cut the write session short when socket issues occur
                         DebugUtil.logException(e, subdata.log);
 
-                        if (queue.size() > 0) SubDataClient.this.write();
+                        if (queue != null && queue.size() > 0) SubDataClient.this.write();
                         else queue = null;
                     } else queue = null;
                 }
