@@ -16,9 +16,4 @@ public interface PacketStreamOut extends PacketOut {
      * @param data Data Stream
      */
     void send(SubDataClient client, OutputStream data) throws Throwable;
-
-    @Override
-    default void sending(SubDataClient client) throws Throwable {
-
-    }
 }

@@ -16,9 +16,4 @@ public interface MessageStreamOut extends MessageOut {
      * @param data Data Stream
      */
     void send(DataClient client, OutputStream data) throws Throwable;
-
-    @Override
-    default void sending(DataClient client) throws Throwable {
-
-    }
 }

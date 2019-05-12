@@ -12,7 +12,9 @@ public interface PacketOut {
      *
      * @param client Client sending
      */
-    void sending(SubDataClient client) throws Throwable;
+    default void sending(SubDataClient client) throws Throwable {
+
+    }
 
     /**
      * Protocol Version

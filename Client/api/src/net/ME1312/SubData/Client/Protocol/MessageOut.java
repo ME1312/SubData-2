@@ -13,7 +13,9 @@ public interface MessageOut {
      *
      * @param client Client sending
      */
-    void sending(DataClient client) throws Throwable;
+    default void sending(DataClient client) throws Throwable {
+
+    }
 
     /**
      * Protocol Version
