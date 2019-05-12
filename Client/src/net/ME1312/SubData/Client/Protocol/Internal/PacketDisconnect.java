@@ -16,7 +16,6 @@ public final class PacketDisconnect implements InitialProtocol.Packet, InitialPa
     public void receive(SubDataClient client) throws Throwable {
         Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.CLOSING);
         client.sendPacket(new PacketDisconnectUnderstood());
-        System.out.println("Disconnect");
     }
 
     @Override
