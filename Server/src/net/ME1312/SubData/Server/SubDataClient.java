@@ -6,14 +6,11 @@ import net.ME1312.Galaxi.Library.Container;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
-import net.ME1312.SubData.Server.Library.ConnectionState;
-import net.ME1312.SubData.Server.Library.DebugUtil;
-import net.ME1312.SubData.Server.Library.DisconnectReason;
+import net.ME1312.SubData.Server.Library.*;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Server.Library.Exception.EndOfStreamException;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Library.Exception.IllegalPacketException;
-import net.ME1312.SubData.Server.Library.UnsignedDataHandler;
 import net.ME1312.SubData.Server.Protocol.*;
 import net.ME1312.SubData.Server.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Server.Protocol.Initial.InitialPacket;
@@ -27,8 +24,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.*;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.*;
@@ -139,6 +134,7 @@ public class SubDataClient extends DataClient {
                                 } else forward.close();
                             } catch (Throwable e) {
                                 DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), subdata.log);
+                                Util.isException(forward::close);
 
                                 if (state.asInt() <= INITIALIZATION.asInt())
                                     Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH

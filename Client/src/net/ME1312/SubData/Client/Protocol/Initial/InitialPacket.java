@@ -25,6 +25,7 @@ public interface InitialPacket {
      * Change the state of a Client to READY
      *
      * @param client Client
+     * @param flush Flushes the Packet Queue (do not flush within a .send())
      * @throws Throwable
      */
     default void setReady(SubDataClient client, boolean flush) throws Throwable {

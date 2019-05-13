@@ -19,14 +19,16 @@ public final class InitialProtocol {
         pIn.put(0x0000, new InitPacketDeclaration());
         pIn.put(0x0001, new InitPacketChangeEncryption());
         pIn.put(0x0002, new InitPacketPostDeclaration());
-        pIn.put(0x0010, new InitPacketChangeProtocol());
+        pIn.put(0xFFFA, new InitPacketVerifyState());
+        pIn.put(0xFFFB, new InitPacketChangeState());
         pIn.put(0xFFFE, new PacketDisconnectUnderstood());
         pIn.put(0xFFFF, new PacketDisconnect());
 
         pOut.put(InitPacketDeclaration.class, 0x0000);
         pOut.put(InitPacketChangeEncryption.class, 0x0001);
         pOut.put(InitPacketPostDeclaration.class, 0x0002);
-        pOut.put(InitPacketChangeProtocol.class, 0x0010);
+        pOut.put(InitPacketVerifyState.class, 0xFFFA);
+        pOut.put(InitPacketChangeState.class, 0xFFFB);
         pOut.put(PacketDisconnectUnderstood.class, 0xFFFE);
         pOut.put(PacketDisconnect.class, 0xFFFF);
     }

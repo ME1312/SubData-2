@@ -23,7 +23,7 @@ public final class InitPacketPostDeclaration implements InitialProtocol.Packet, 
     @Override
     public void receive(SubDataClient client) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
-            client.sendPacket(new InitPacketChangeProtocol());
+            client.sendPacket(new InitPacketChangeState());
         }
     }
 

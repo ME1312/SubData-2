@@ -6,6 +6,7 @@ import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.DebugUtil;
+import net.ME1312.SubData.Client.Protocol.Initial.InitPacketVerifyState;
 import net.ME1312.SubData.Client.Protocol.Internal.*;
 import net.ME1312.SubData.Client.Protocol.Internal.PacketDownloadClientList;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
@@ -35,12 +36,14 @@ public class SubDataProtocol extends DataProtocol {
         ciphers.put("NULL", NEH.get());
         ciphers.put("NONE", NEH.get());
 
+        pIn.put(0xFFFA, new InitPacketVerifyState());
         pIn.put(0xFFFB, new PacketDownloadClientList());
         pIn.put(0xFFFC, new PacketForwardPacket(null, null));
         pIn.put(0xFFFD, new PacketRecieveMessage());
         pIn.put(0xFFFE, new PacketDisconnectUnderstood());
         pIn.put(0xFFFF, new PacketDisconnect());
 
+        pOut.put(InitPacketVerifyState.class, 0xFFFA);
         pOut.put(PacketDownloadClientList.class, 0xFFFB);
         pOut.put(PacketForwardPacket.class, 0xFFFC);
         pOut.put(PacketSendMessage.class, 0xFFFD);
@@ -157,7 +160,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void registerPacket(int id, PacketIn packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (id > 65530 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFFA): " + DebugUtil.toHex(0xFFFF, id));
+        if (id > 65529 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFF9): " + DebugUtil.toHex(0xFFFF, id));
         pIn.put(id, packet);
     }
 
@@ -170,7 +173,7 @@ public class SubDataProtocol extends DataProtocol {
         if (Util.isNull(packet)) throw new NullPointerException();
         List<Integer> search = new ArrayList<Integer>();
         search.addAll(pIn.keySet());
-        for (int id : search) if (pIn.get(id).equals(packet) &&  id < 65530) {
+        for (int id : search) if (pIn.get(id).equals(packet) &&  id < 65529) {
             pIn.remove(id);
         }
     }
@@ -183,7 +186,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void registerPacket(int id, Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (id > 65530 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFFA): " + DebugUtil.toHex(0xFFFF, id));
+        if (id > 65529 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFF9): " + DebugUtil.toHex(0xFFFF, id));
         pOut.put(packet, id);
     }
 
@@ -194,7 +197,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void unregisterPacket(Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (pOut.keySet().contains(packet) && pOut.get(packet) < 65530) pOut.remove(packet);
+        if (pOut.keySet().contains(packet) && pOut.get(packet) < 65529) pOut.remove(packet);
     }
 
     /**

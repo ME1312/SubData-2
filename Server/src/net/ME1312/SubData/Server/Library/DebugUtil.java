@@ -17,10 +17,12 @@ public class DebugUtil {
      * @return Converted Value (0x0001 is the result of this example)
      */
     public static String toHex(int example, int value) {
+        boolean negative = value < 0;
+        if (negative) value *= -1;
         String ex = Integer.toHexString(example);
         String hex = Integer.toHexString(value).toUpperCase();
         while (hex.length() < ex.length()) hex = "0" + hex;
-        return "0x" + hex;
+        return ((negative)?"-":"") + "0x" + hex;
     }
 
     /**
