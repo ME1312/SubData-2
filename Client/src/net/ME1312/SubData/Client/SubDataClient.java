@@ -313,7 +313,7 @@ public class SubDataClient extends DataClient {
                                     open = false;
                                     out.write('\u0017');
                                     out.flush();
-                                    if (queue.size() > 0) SubDataClient.this.write();
+                                    if (queue != null && queue.size() > 0) SubDataClient.this.write();
                                     else queue = null;
                                 }
                             }
