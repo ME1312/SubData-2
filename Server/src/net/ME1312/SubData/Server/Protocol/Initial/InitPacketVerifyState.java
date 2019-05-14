@@ -22,8 +22,7 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Init
     public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
         ObjectMap<Integer> data = new ObjectMap<Integer>();
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == POST_INITIALIZATION) {
-            data.set(0x0000, Util.<ConnectionState>reflect(SubDataClient.class.getDeclaredField("state"), client).toString());
-            data.set(0x0001, Util.<HashMap<ConnectionState, LinkedList<PacketOut>>>reflect(SubDataClient.class.getDeclaredField("statequeue"), client).keySet().contains(POST_INITIALIZATION));
+            data.set(0x0000, Util.<HashMap<ConnectionState, LinkedList<PacketOut>>>reflect(SubDataClient.class.getDeclaredField("statequeue"), client).keySet().contains(POST_INITIALIZATION));
         }
         return data;
     }

@@ -17,12 +17,10 @@ import static net.ME1312.SubData.Client.Library.ConnectionState.POST_INITIALIZAT
  * Initial Packet for Verifying State Class
  */
 public final class InitPacketVerifyState implements InitialProtocol.Packet, InitialPacket, PacketObjectIn<Integer>, PacketObjectOut<Integer> {
-    ConnectionState state;
     boolean postinit;
 
     public InitPacketVerifyState() {}
-    private InitPacketVerifyState(ConnectionState state, boolean postinit) {
-        this.state = state;
+    private InitPacketVerifyState(boolean postinit) {
         this.postinit = postinit;
     }
 
@@ -50,7 +48,7 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Init
 
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
-        client.sendPacket(new InitPacketVerifyState(ConnectionState.valueOf(data.getRawString(0x0000)), data.getBoolean(0x0001, false)));
+        client.sendPacket(new InitPacketVerifyState(data.getBoolean(0x0000, false)));
     }
 
     @Override
