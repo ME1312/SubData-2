@@ -12,7 +12,7 @@ import net.ME1312.SubData.Client.SubDataClient;
 /**
  * Packet Disconnect Understood Class
  */
-public final class PacketDisconnectUnderstood implements InitialProtocol.Packet, InitialPacket, PacketIn, PacketOut {
+public final class PacketDisconnectUnderstood implements InitialProtocol.Packet, PacketIn, PacketOut {
     @Override
     public void receive(SubDataClient client) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.CLOSING) {

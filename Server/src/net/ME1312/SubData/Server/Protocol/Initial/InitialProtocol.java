@@ -38,6 +38,6 @@ public final class InitialProtocol {
      * InitialProtocol Packet Tag Class<br>
      * Classes that implement this may be sent during the INITIALIZATION state
      */
-    public interface Packet {
+    public interface Packet extends InitialPacket {
     }
 }

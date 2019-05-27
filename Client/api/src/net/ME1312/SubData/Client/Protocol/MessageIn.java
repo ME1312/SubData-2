@@ -29,7 +29,7 @@ public interface MessageIn {
      * @param version Version of the incoming packet
      * @return Compatibility Status
      */
-    default boolean isCompatable(Version version) {
+    default boolean isCompatible(Version version) {
         return Version.equals(version(), version);
     }
 }

@@ -16,7 +16,7 @@ import static net.ME1312.SubData.Server.Library.ConnectionState.POST_INITIALIZAT
 /**
  * Initial Packet for Verifying States Class
  */
-public final class InitPacketVerifyState implements InitialProtocol.Packet, InitialPacket, PacketObjectIn<Integer>, PacketObjectOut<Integer> {
+public final class InitPacketVerifyState implements InitialProtocol.Packet, PacketObjectIn<Integer>, PacketObjectOut<Integer> {
 
     @Override
     public ObjectMap<Integer> send(SubDataClient client) throws Throwable {

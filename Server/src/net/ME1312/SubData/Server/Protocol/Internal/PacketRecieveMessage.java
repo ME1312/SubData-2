@@ -3,7 +3,6 @@ package net.ME1312.SubData.Server.Protocol.Internal;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Server.DataProtocol;
-import net.ME1312.SubData.Server.DataServer;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Protocol.MessageIn;
 import net.ME1312.SubData.Server.Protocol.MessageStreamIn;
@@ -60,11 +59,11 @@ public class PacketRecieveMessage implements PacketStreamIn {
 
         HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataProtocol.class.getDeclaredField("mIn"), client.getServer().getProtocol());
 
-        if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + channel + ", " + handle + ", " + version + "]");
-        if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [" + channel + ", " + handle + ", " + version + "]");
+        if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + ((channel == null)?"null":"\""+channel+"\"") + ", " + ((handle == null)?"null":"\""+handle+"\"") + ", " + ((version == null)?"null":"\""+version+"\"") + "]");
+        if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
-        if (!message.isCompatable(version)) throw new IllegalMessageException("The handler does not support this message version (" + message.version() + "): [" + channel + ", " + handle + ", " + version + "]");
+        if (!message.isCompatible(version)) throw new IllegalMessageException("The handler does not support this message version (\"" + message.version() + "\"): [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
         message.receive(client);
         if (message instanceof MessageStreamIn) ((MessageStreamIn) message).receive(client, data);
         else data.close();

@@ -14,7 +14,7 @@ import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 /**
  * Initial Packet for Changing States Class
  */
-public final class InitPacketChangeState implements InitialProtocol.Packet, InitialPacket, PacketIn, PacketOut {
+public final class InitPacketChangeState implements InitialProtocol.Packet, PacketIn, PacketOut {
 
     @Override
     public void receive(SubDataClient client) throws Throwable {

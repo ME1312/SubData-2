@@ -28,7 +28,7 @@ public interface PacketIn {
      * @param version Version of the incoming packet
      * @return Compatibility Status
      */
-    default boolean isCompatable(int version) {
+    default boolean isCompatible(int version) {
         return version() == version;
     }
 }
