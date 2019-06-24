@@ -41,8 +41,7 @@ public interface InitialPacket {
                 if (flush) Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
             }
 
-            LinkedList<Callback<DataClient>> events = Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on);
-            Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on, new LinkedList<Callback<DataClient>>());
+            LinkedList<Callback<DataClient>> events = new LinkedList<>(Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on));
             for (Callback<DataClient> next : events) try {
                 if (next != null) next.run(client);
             } catch (Throwable e) {

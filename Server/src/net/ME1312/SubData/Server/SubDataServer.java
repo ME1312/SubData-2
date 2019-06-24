@@ -114,8 +114,7 @@ public class SubDataServer extends DataServer {
     private SubDataClient addClient(SubDataClient client) throws IOException {
         boolean result = true;
         Util.isException(() -> Util.reflect(DataClient.class.getDeclaredField("id"), client, Util.getNew(clients.keySet(), UUID::randomUUID)));
-        LinkedList<ReturnCallback<DataClient, Boolean>> events = on.connect;
-        on.connect = new LinkedList<>();
+        LinkedList<ReturnCallback<DataClient, Boolean>> events = new LinkedList<>(on.connect);
         for (ReturnCallback<DataClient, Boolean> next : events) try {
             if (next != null) result = next.run(client) != Boolean.FALSE && result;
         } catch (Throwable e) {
@@ -160,8 +159,7 @@ public class SubDataServer extends DataServer {
 
     public void close() throws IOException {
         boolean result = true;
-        LinkedList<ReturnCallback<DataServer, Boolean>> events = on.close;
-        on.close = new LinkedList<>();
+        LinkedList<ReturnCallback<DataServer, Boolean>> events = new LinkedList<>(on.close);
         for (ReturnCallback<DataServer, Boolean> next : events) try {
             if (next != null) result = next.run(this) != Boolean.FALSE && result;
         } catch (Throwable e) {
@@ -177,7 +175,7 @@ public class SubDataServer extends DataServer {
             server.close();
 
             scheduler.run(() -> {
-                LinkedList<Callback<DataServer>> events2 = on.closed;
+                LinkedList<Callback<DataServer>> events2 = new LinkedList<>(on.closed);
                 for (Callback<DataServer> next : events2) try {
                     if (next != null) next.run(this);
                 } catch (Throwable e) {

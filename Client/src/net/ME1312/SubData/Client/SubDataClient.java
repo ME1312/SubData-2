@@ -457,8 +457,7 @@ public class SubDataClient extends DataClient {
     public void close() throws IOException {
         if (state.asInt() < CLOSING.asInt() && !socket.isClosed()) {
             boolean result = true;
-            LinkedList<ReturnCallback<DataClient, Boolean>> events = on.close;
-            on.close = new LinkedList<>();
+            LinkedList<ReturnCallback<DataClient, Boolean>> events = new LinkedList<>(on.close);
             for (ReturnCallback<DataClient, Boolean> next : events) try {
                 if (next != null) result = next.run(this) != Boolean.FALSE && result;
             } catch (Throwable e) {
@@ -496,8 +495,7 @@ public class SubDataClient extends DataClient {
 
             final DisconnectReason freason = reason;
             scheduler.run(() -> {
-                LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = on.closed;
-                on.closed = new LinkedList<>();
+                LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = new LinkedList<>(on.closed);
                 for (Callback<NamedContainer<DisconnectReason, DataClient>> next : events) try {
                     if (next != null) next.run(new NamedContainer<>(freason, this));
                 } catch (Throwable e) {
