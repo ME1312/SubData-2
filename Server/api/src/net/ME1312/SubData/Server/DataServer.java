@@ -112,17 +112,36 @@ public abstract class DataServer {
         for (String next : this.whitelist.keySet()) if (this.whitelist.get(next)) {
             whitelist.add(next);
         } else whitelist.remove(next);
+
         boolean whitelisted = false;
-        Matcher regaddress = Pattern.compile("^(\\d{1,3}).(\\d{1,3}).(\\d{1,3}).(\\d{1,3})$").matcher(address.getHostAddress());
+        Matcher regaddress = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$").matcher(address.getHostAddress());
         if (regaddress.find()) {
+            int rip = 0;
+            for (int i = 1; i <= 4; i++) {
+                int octet = Integer.valueOf(regaddress.group(i));
+                if (octet > 255) octet = 255;
+
+                rip = (rip << 8) + octet;
+            }
+
             for (String allowed : whitelist) if (!whitelisted) {
-                Matcher regallowed = Pattern.compile("^(\\d{1,3}|%).(\\d{1,3}|%).(\\d{1,3}|%).(\\d{1,3}|%)$").matcher(allowed);
-                if (regallowed.find() && (
-                        (regaddress.group(1).equals(regallowed.group(1)) || regallowed.group(1).equals("%")) &&
-                                (regaddress.group(2).equals(regallowed.group(2)) || regallowed.group(2).equals("%")) &&
-                                (regaddress.group(3).equals(regallowed.group(3)) || regallowed.group(3).equals("%")) &&
-                                (regaddress.group(4).equals(regallowed.group(4)) || regallowed.group(4).equals("%"))
-                )) whitelisted = true;
+                Matcher regallowed = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:\\/(\\d{1,2}))?$").matcher(allowed);
+                if (regallowed.find()) {
+                    int sub = (regallowed.group(5) == null)?32:Integer.parseInt(regallowed.group(5));
+                    if (sub > 32) sub = 32;
+                    if (sub >  0) sub = 0xffffffff << (32 - sub);
+                    else sub = 0;
+
+                    int aip = 0;
+                    for (int i = 1; i <= 4; i++) {
+                        int octet = Integer.valueOf(regallowed.group(i));
+                        if (octet > 255) octet = 255;
+
+                        aip = (aip << 8) + octet;
+                    }
+
+                    if ((rip & sub) == aip) whitelisted = true;
+                }
             }
         }
 
@@ -136,7 +155,10 @@ public abstract class DataServer {
      */
     public void unwhitelist(String address) {
         if (Util.isNull(address)) throw new NullPointerException();
-        whitelist.put(address, false);
+
+        if (getProtocol().whitelist.contains(address)) {
+            whitelist.put(address, false);
+        } else whitelist.remove(address);
     }
 
     /**
