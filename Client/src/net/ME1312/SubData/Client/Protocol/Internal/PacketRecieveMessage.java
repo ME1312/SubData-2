@@ -4,10 +4,10 @@ import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.DataProtocol;
 import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
-import net.ME1312.SubData.Client.Protocol.MessageIn;
-import net.ME1312.SubData.Client.Protocol.MessageStreamIn;
-import net.ME1312.SubData.Client.Protocol.PacketStreamIn;
+import net.ME1312.SubData.Client.Library.Exception.IllegalSenderException;
+import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.SubDataClient;
+import net.ME1312.SubData.Client.SubDataSender;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -17,10 +17,10 @@ import java.util.HashMap;
 /**
  * Packet Message Retrieval Class
  */
-public class PacketRecieveMessage implements PacketStreamIn {
+public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
 
     @Override
-    public void receive(SubDataClient client, InputStream data) throws Throwable {
+    public void receive(SubDataSender sender, InputStream data) throws Throwable {
         ByteArrayOutputStream pending = new ByteArrayOutputStream();
         String channel = null, handle = null;
         Version version = null;
@@ -57,15 +57,17 @@ public class PacketRecieveMessage implements PacketStreamIn {
             }
         }
 
-        HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataProtocol.class.getDeclaredField("mIn"), client.getProtocol());
+        HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataProtocol.class.getDeclaredField("mIn"), sender.getProtocol());
 
         if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + ((channel == null)?"null":"\""+channel+"\"") + ", " + ((handle == null)?"null":"\""+handle+"\"") + ", " + ((version == null)?"null":"\""+version+"\"") + "]");
         if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
+        if (sender instanceof PacketForwardPacket.DataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("The handler does not support forwarded messages: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
+        if (sender instanceof SubDataClient && message instanceof ForwardOnly) throw new IllegalSenderException("The handler does not support non-forwarded messages: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
         if (!message.isCompatible(version)) throw new IllegalMessageException("The handler does not support this message version (\"" + message.version() + "\"): [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
-        message.receive(client);
-        if (message instanceof MessageStreamIn) ((MessageStreamIn) message).receive(client, data);
+        message.receive(sender);
+        if (message instanceof MessageStreamIn) ((MessageStreamIn) message).receive(sender, data);
         else data.close();
     }
 

@@ -5,6 +5,7 @@ import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Library.DisconnectReason;
+import net.ME1312.SubData.Server.Library.PingResponse;
 import net.ME1312.SubData.Server.Protocol.*;
 
 import java.io.*;
@@ -61,6 +62,13 @@ public abstract class DataClient {
     }
 
     /**
+     * Ping the Client
+     *
+     * @param response Ping Response
+     */
+    public abstract void ping(Callback<PingResponse> response);
+
+    /**
      * Send a message to the Client
      *
      * @param message Message to send
@@ -96,6 +104,13 @@ public abstract class DataClient {
      * @return Handler
      */
     public abstract ClientHandler getHandler();
+
+    /**
+     * Open an Async Data SubChannel
+     *
+     * @return New SubData Channel
+     */
+    public abstract void newChannel(Callback<DataClient> client);
 
     /**
      * Closes the connection

@@ -3,6 +3,7 @@ package net.ME1312.SubData.Client.Protocol.Initial;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.SubDataClient;
+import net.ME1312.SubData.Client.SubDataSender;
 
 import static net.ME1312.SubData.Client.Library.ConnectionState.*;
 
@@ -14,17 +15,17 @@ public final class InitPacketChangeState implements InitialProtocol.Packet, Pack
     public InitPacketChangeState() {}
 
     @Override
-    public void sending(SubDataClient client) throws Throwable {
-        if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == INITIALIZATION) {
-            Util.reflect(SubDataClient.class.getDeclaredField("state"), client, POST_INITIALIZATION);
-        } else if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == POST_INITIALIZATION) {
-            setReady(client, false);
+    public void sending(SubDataSender sender) throws Throwable {
+        if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == INITIALIZATION) {
+            Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection(), POST_INITIALIZATION);
+        } else if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == POST_INITIALIZATION) {
+            setReady(sender.getConnection(), false);
         }
     }
 
     @Override
-    public void receive(SubDataClient client) throws Throwable {
-        client.sendPacket(new InitPacketChangeState());
+    public void receive(SubDataSender sender) throws Throwable {
+        sender.sendPacket(new InitPacketChangeState());
     }
 
     @Override

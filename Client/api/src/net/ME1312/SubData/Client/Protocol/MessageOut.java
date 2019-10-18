@@ -1,7 +1,7 @@
 package net.ME1312.SubData.Client.Protocol;
 
 import net.ME1312.Galaxi.Library.Version.Version;
-import net.ME1312.SubData.Client.DataClient;
+import net.ME1312.SubData.Client.DataSender;
 
 /**
  * Message Out Layout Class
@@ -11,9 +11,9 @@ public interface MessageOut {
     /**
      * An Event called when the Message is being sent
      *
-     * @param client Client sending
+     * @param sender The receiving Sender
      */
-    default void sending(DataClient client) throws Throwable {
+    default void sending(DataSender sender) throws Throwable {
 
     }
 

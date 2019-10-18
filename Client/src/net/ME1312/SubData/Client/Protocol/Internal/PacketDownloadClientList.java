@@ -5,7 +5,7 @@ import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Client.Protocol.PacketObjectOut;
-import net.ME1312.SubData.Client.SubDataClient;
+import net.ME1312.SubData.Client.SubDataSender;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +18,11 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
     private static HashMap<String, Callback<ObjectMap<String>>[]> callbacks = new HashMap<String, Callback<ObjectMap<String>>[]>();
     private String tracker;
     private UUID id;
+
+    /**
+     * New PacketDownloadClientList (In)
+     */
+    public PacketDownloadClientList() {}
 
     /**
      * New PacketDownloadNetworkList (Out)
@@ -44,20 +49,16 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
     }
 
     @Override
-    public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
-        if (tracker != null) {
-            ObjectMap<Integer> data = new ObjectMap<Integer>();
-            data.set(0x0000, tracker);
-            if (id != null) data.set(0x0001, id);
-            return data;
-        } else {
-            return null;
-        }
+    public ObjectMap<Integer> send(SubDataSender sender) throws Throwable {
+        ObjectMap<Integer> data = new ObjectMap<Integer>();
+        data.set(0x0000, tracker);
+        if (id != null) data.set(0x0001, id);
+        return data;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
+    public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
         for (Callback<ObjectMap<String>> callback : callbacks.get(data.getRawString(0x0000))) callback.run(new ObjectMap<String>((Map<String, ?>) data.getObject(0x0001)));
         callbacks.remove(data.getRawString(0x0000));
     }

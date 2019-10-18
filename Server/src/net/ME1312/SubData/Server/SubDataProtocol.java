@@ -21,6 +21,9 @@ import java.util.logging.Logger;
  * SubData Protocol Class
  */
 public class SubDataProtocol extends DataProtocol {
+    public static int MIN_PACKET_ID = 0x0000;
+    public static int MAX_PACKET_ID = 0xFFEF;
+
     final HashMap<String, Cipher> ciphers = new HashMap<String, Cipher>();
     final HashMap<Class<? extends PacketOut>, Integer> pOut = new HashMap<Class<? extends PacketOut>, Integer>();
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
@@ -35,13 +38,19 @@ public class SubDataProtocol extends DataProtocol {
         ciphers.put("NULL", NEH.get());
         ciphers.put("NONE", NEH.get());
 
+        pIn.put(0xFFF7, new PacketOpenChannel());
+        pIn.put(0xFFF8, new PacketPingResponse());
+        pIn.put(0xFFF9, new PacketPing());
         pIn.put(0xFFFA, new InitPacketVerifyState());
         pIn.put(0xFFFB, new PacketDownloadClientList(null, null));
-        pIn.put(0xFFFC, new PacketForwardPacket(null));
+        pIn.put(0xFFFC, new PacketForwardPacket());
         pIn.put(0xFFFD, new PacketRecieveMessage());
         pIn.put(0xFFFE, new PacketDisconnectUnderstood());
         pIn.put(0xFFFF, new PacketDisconnect());
 
+        pOut.put(PacketOpenChannel.class, 0xFFF7);
+        pOut.put(PacketPingResponse.class, 0xFFF8);
+        pOut.put(PacketPing.class, 0xFFF9);
         pOut.put(InitPacketVerifyState.class, 0xFFFA);
         pOut.put(PacketDownloadClientList.class, 0xFFFB);
         pOut.put(PacketForwardPacket.class, 0xFFFC);
@@ -133,7 +142,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void registerPacket(int id, PacketIn packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (id > 65529 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFF9): " + DebugUtil.toHex(0xFFFF, id));
+        if (id > MAX_PACKET_ID || id < MIN_PACKET_ID) throw new IllegalArgumentException("Packet ID is not in range (" + DebugUtil.toHex(0xFFFF, MIN_PACKET_ID) + " to " + DebugUtil.toHex(0xFFFF, MAX_PACKET_ID) + "): " + DebugUtil.toHex(0xFFFF, id));
         pIn.put(id, packet);
     }
 
@@ -146,7 +155,7 @@ public class SubDataProtocol extends DataProtocol {
         if (Util.isNull(packet)) throw new NullPointerException();
         List<Integer> search = new ArrayList<Integer>();
         search.addAll(pIn.keySet());
-        for (int id : search) if (pIn.get(id).equals(packet) && id < 65529) {
+        for (int id : search) if (pIn.get(id).equals(packet) && id < MAX_PACKET_ID) {
             pIn.remove(id);
         }
     }
@@ -159,7 +168,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void registerPacket(int id, Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (id > 65529 || id < 0) throw new IllegalArgumentException("Packet ID is not in range (0x0000 to 0xFFF9): " + DebugUtil.toHex(0xFFFF, id));
+        if (id > MAX_PACKET_ID || id < MIN_PACKET_ID) throw new IllegalArgumentException("Packet ID is not in range (" + DebugUtil.toHex(0xFFFF, MIN_PACKET_ID) + " to " + DebugUtil.toHex(MAX_PACKET_ID, 0xFFFF) + "): " + DebugUtil.toHex(0xFFFF, id));
         pOut.put(packet, id);
     }
 
@@ -170,7 +179,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void unregisterPacket(Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (pOut.keySet().contains(packet) && pOut.get(packet) < 65529) pOut.remove(packet);
+        if (pOut.keySet().contains(packet) && pOut.get(packet) < MAX_PACKET_ID) pOut.remove(packet);
     }
 
     /**

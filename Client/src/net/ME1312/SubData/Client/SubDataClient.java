@@ -8,10 +8,8 @@ import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.*;
-import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
-import net.ME1312.SubData.Client.Library.Exception.EndOfStreamException;
-import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
-import net.ME1312.SubData.Client.Library.Exception.IllegalPacketException;
+import net.ME1312.SubData.Client.Library.Exception.*;
+import net.ME1312.SubData.Client.Library.PingResponse;
 import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Client.Protocol.Initial.InitialPacket;
@@ -33,7 +31,7 @@ import static net.ME1312.SubData.Client.Library.DisconnectReason.*;
 /**
  * SubData Client Class
  */
-public class SubDataClient extends DataClient {
+public class SubDataClient extends DataClient implements SubDataSender {
     private Socket socket;
     private LinkedList<PacketOut> queue;
     private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
@@ -44,6 +42,7 @@ public class SubDataClient extends DataClient {
     private ConnectionState state;
     private Callback<Runnable> scheduler;
     private Object[] constructor;
+    private SubDataClient next;
     private Logger log;
 
     SubDataClient(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port) throws IOException {
@@ -67,7 +66,7 @@ public class SubDataClient extends DataClient {
         read();
     }
 
-    private void read(Container<Boolean> reset, InputStream data) {
+    private void read(SubDataSender sender, Container<Boolean> reset, InputStream data) {
         try {
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
             int id = -1, version = -1;
@@ -116,7 +115,9 @@ public class SubDataClient extends DataClient {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (!packet.isCompatible(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (sender instanceof PacketForwardPacket.DataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException("The handler does not support forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException("The handler does not support non-forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!packet.isCompatible(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support packet version " + DebugUtil.toHex(0xFFFF, packet.version()) + ": [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
@@ -127,10 +128,10 @@ public class SubDataClient extends DataClient {
                     } else {
                         scheduler.run(() -> {
                             try {
-                                packet.receive(this);
+                                packet.receive(sender);
 
                                 if (packet instanceof PacketStreamIn) {
-                                    ((PacketStreamIn) packet).receive(this, forward);
+                                    ((PacketStreamIn) packet).receive(sender, forward);
                                 } else forward.close();
                             } catch (Throwable e) {
                                 DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), log);
@@ -210,7 +211,7 @@ public class SubDataClient extends DataClient {
 
                 // Step 3 // Parse the SubData Packet Formatting
                 PipedInputStream data = new PipedInputStream(1024);
-                new Thread(() -> read(reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
+                new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
                 PipedOutputStream forward = new PipedOutputStream(data);
@@ -233,7 +234,7 @@ public class SubDataClient extends DataClient {
         }, "SubDataClient::Data_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
     }
 
-    private void write(PacketOut next, OutputStream data) {
+    private void write(SubDataSender sender, PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
         try {
             Container<Boolean> open = new Container<>(true);
@@ -261,13 +262,13 @@ public class SubDataClient extends DataClient {
             // Step 3 // Invoke the Packet
             scheduler.run(() -> {
                 try {
-                    next.sending(this);
+                    next.sending(sender);
 
                     if (next instanceof PacketStreamOut) {
-                        ((PacketStreamOut) next).send(this, forward);
+                        ((PacketStreamOut) next).send(sender, forward);
                     } else forward.close();
                 } catch (Throwable e) {
-                    DebugUtil.logException(e, log);
+                    DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet writer"), log);
                     Util.isException(forward::close);
                 }
             });
@@ -286,7 +287,7 @@ public class SubDataClient extends DataClient {
                     if (next != null) {
                         PipedOutputStream data = new PipedOutputStream();
                         PipedInputStream raw = new PipedInputStream(data, 1024);
-                        new Thread(() -> write(next, data), "SubDataClient::Packet_Writer(" + socket.getLocalSocketAddress().toString() + ')').start();
+                        new Thread(() -> write(this, next, data), "SubDataClient::Packet_Writer(" + socket.getLocalSocketAddress().toString() + ')').start();
 
                         // Step 5 // Add Escapes to the Encrypted Data
                         OutputStream forward = new OutputStream() {
@@ -341,16 +342,19 @@ public class SubDataClient extends DataClient {
      * Send a packet to Client
      *
      * @param packet Packet to send
+     * @see ForwardOnly Packets must <b><u>NOT</u></b> e tagged as Forward-Only
      */
     public void sendPacket(PacketOut packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
+        if (packet instanceof ForwardOnly) throw new IllegalPacketException("Packet is Forward-Only");
         if (!isClosed()) {
             if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
                 sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
             } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
                 sendPacketLater(packet, READY);
-            } else if (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) {
-                // do nothing
+            } else if (state == CLOSED || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
+                if (next == null) sendPacketLater(packet, CLOSED);
+                else next.sendPacket(packet);
             } else {
                 boolean init = false;
 
@@ -375,19 +379,23 @@ public class SubDataClient extends DataClient {
      *
      * @param id Client ID
      * @param packet Packet to send
+     * @see net.ME1312.SubData.Client.Protocol.Forwardable Packets must be tagged as Forwardable
      */
-    public void forwardPacket(UUID id, PacketOut packet) {
+    public <ForwardablePacketOut extends PacketOut & Forwardable> void forwardPacket(UUID id, ForwardablePacketOut packet) {
         if (Util.isNull(id, packet)) throw new NullPointerException();
+        if (!(packet instanceof Forwardable)) throw new IllegalPacketException("Packet is not Forwardable");
         sendPacket(new PacketForwardPacket(id, packet));
     }
 
     public void sendMessage(MessageOut message) {
         if (Util.isNull(message)) throw new NullPointerException();
+        if (message instanceof ForwardOnly) throw new IllegalMessageException("Message is Forward-Only");
         sendPacket(new PacketSendMessage(message));
     }
 
-    public void forwardMessage(UUID id, MessageOut message) {
+    public <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut message) {
         if (Util.isNull(id, message)) throw new NullPointerException();
+        if (!(message instanceof Forwardable)) throw new IllegalMessageException("Message is not Forwardable");
         forwardPacket(id, new PacketSendMessage(message));
     }
 
@@ -431,6 +439,18 @@ public class SubDataClient extends DataClient {
         }));
     }
 
+    @Override
+    public void ping(Callback<PingResponse> response) {
+        if (Util.isNull(response)) throw new NullPointerException();
+        sendPacket(new PacketPing(response));
+    }
+
+    @Override
+    public void ping(UUID id, Callback<PingResponse> response) {
+        if (Util.isNull(response)) throw new NullPointerException();
+        forwardPacket(id, new PacketPing(response));
+    }
+
     /**
      * Get the underlying Client Socket
      *
@@ -438,6 +458,18 @@ public class SubDataClient extends DataClient {
      */
     public Socket getSocket() {
         return socket;
+    }
+
+    /**
+     * Get the Client that connects the Server to us
+     *
+     * @deprecated The Client connection to the Server is this
+     * @return This Client
+     */
+    @Override
+    @Deprecated
+    public SubDataClient getConnection() {
+        return this;
     }
 
     public SubDataProtocol getProtocol() {
@@ -450,8 +482,24 @@ public class SubDataClient extends DataClient {
 
     @SuppressWarnings("unchecked")
     @Override
-    public SubDataClient newChannel() throws IOException {
+    public SubDataClient openChannel() throws IOException {
         return protocol.sub((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3]);
+    }
+
+    /**
+     * Reconnect the data stream using another Client
+     *
+     * @param client Client
+     */
+    public void reconnect(SubDataClient client) {
+        if (Util.isNull(client)) throw new NullPointerException();
+        if (state.asInt() < CLOSING.asInt() || next != null) throw new IllegalStateException("Cannot override existing data stream");
+
+        next = client;
+        if (statequeue.keySet().contains(CLOSED)) {
+            for (PacketOut packet : statequeue.get(CLOSED)) next.sendPacket(packet);
+            statequeue.remove(CLOSED);
+        }
     }
 
     public void close() throws IOException {

@@ -34,7 +34,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
         ObjectMap<String> data = new ObjectMap<String>();
 
         for (UUID id : clients.keySet()) if (request == null || request == id) {
-            data.set(id.toString(), Util.getDespiteException(clients.get(id).getHandler()::forSubData, null));
+            data.set(id.toString(), Util.getDespiteException(() -> clients.get(id).getHandler().forSubData(), null));
         }
 
         if (tracker != null) response.set(0x0000, tracker);

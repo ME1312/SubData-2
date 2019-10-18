@@ -16,18 +16,27 @@ import java.util.UUID;
  */
 public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
     private InputStream in;
+    private UUID id;
+
+    /**
+     * New PacketForwardPacket (In)
+     */
+    public PacketForwardPacket() {}
 
     /**
      * New PacketForwardPacket (Out)
      *
      * @param in Packet stream to forward
      */
-    public PacketForwardPacket(InputStream in) {
+    public PacketForwardPacket(SubDataClient sender, InputStream in) {
+        this.id = sender.getID();
         this.in = in;
     }
 
     @Override
     public void send(SubDataClient client, OutputStream out) throws Throwable {
+        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).array());
+        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getLeastSignificantBits()).array());
         int b;
         while ((b = in.read()) != -1) out.write(b);
         out.close();
@@ -57,15 +66,15 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
         if (position >= 16) {
             UUID id = new UUID(id_p1, id_p2);
             if (client.getServer().getClient(id) != null) {
-                client.getServer().getClient(id).sendPacket(new PacketForwardPacket(in));
-            } else throw new IllegalArgumentException("Cannot forward to invalid Client ID: [" + id.toString() + "]");
+                client.getServer().getClient(id).sendPacket(new PacketForwardPacket(client, in));
+            } else throw new IllegalArgumentException("Cannot forward to invalid Destination ID: [" + id.toString() + "]");
         } else {
-            throw new IllegalArgumentException("Invalid UUID data for Client ID: [" + id_p1 + ", " + id_p2 + "]");
+            throw new IllegalArgumentException("Invalid UUID data for Destination ID: [" + id_p1 + ", " + id_p2 + "]");
         }
     }
 
     @Override
     public int version() {
-        return 0x0001;
+        return 0x0002;
     }
 }

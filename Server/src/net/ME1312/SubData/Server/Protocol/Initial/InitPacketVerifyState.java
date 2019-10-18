@@ -34,9 +34,12 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Pack
                 HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
 
                 if (data.getBoolean(0x0001)) {
-                    if (queue.size() > 0) {
-                        Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(POST_INITIALIZATION));
-                        Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+                    if (queue.keySet().contains(POST_INITIALIZATION)) {
+                        if (queue.get(POST_INITIALIZATION).size() > 0) {
+                            Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(POST_INITIALIZATION));
+                            Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+                        }
+                        queue.remove(POST_INITIALIZATION);
                     }
                 } else {
                     setReady(client, true);

@@ -36,9 +36,12 @@ public interface InitialPacket {
             Util.<Logger>reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()).info(client.getAddress().toString() + " has logged in");
 
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
-            if (queue.size() > 0) {
-                Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(READY));
-                if (flush) Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+            if (queue.keySet().contains(READY)) {
+                if (queue.get(READY).size() > 0) {
+                    Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(READY));
+                    if (flush) Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+                }
+                queue.remove(READY);
             }
 
             LinkedList<Callback<DataClient>> events = new LinkedList<>(Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on));

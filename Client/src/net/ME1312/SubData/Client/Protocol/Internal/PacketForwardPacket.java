@@ -1,14 +1,21 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
+import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Container;
 import net.ME1312.Galaxi.Library.Util;
+import net.ME1312.SubData.Client.Library.PingResponse;
+import net.ME1312.SubData.Client.Protocol.MessageOut;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.Protocol.PacketStreamIn;
 import net.ME1312.SubData.Client.Protocol.PacketStreamOut;
 import net.ME1312.SubData.Client.SubDataClient;
+import net.ME1312.SubData.Client.SubDataProtocol;
+import net.ME1312.SubData.Client.SubDataSender;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.UUID;
@@ -19,6 +26,64 @@ import java.util.UUID;
 public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
     private PacketOut packet;
     private UUID id;
+
+    /**
+     * Forwarded Data Sender Class
+     */
+    public static class DataSender implements SubDataSender {
+        private final SubDataClient client;
+        private final UUID id;
+
+        private DataSender(SubDataClient client, UUID id) {
+            this.client = client;
+            this.id = id;
+        }
+
+        @Override
+        public void ping(Callback<PingResponse> response) {
+            client.ping(id, response);
+        }
+
+        @Override
+        public void sendPacket(PacketOut packet) {
+            try {
+                SubDataClient.class.getMethod("forwardPacket", UUID.class, PacketOut.class).invoke(client, id, packet);
+            } catch (InvocationTargetException e) {
+                if (e.getCause() instanceof RuntimeException) throw (RuntimeException) e.getCause();
+            } catch (Throwable e) {}
+        }
+
+        @Override
+        public void sendMessage(MessageOut message) {
+            try {
+                SubDataClient.class.getMethod("forwardMessage", UUID.class, MessageOut.class).invoke(client, id, message);
+            } catch (InvocationTargetException e) {
+                if (e.getCause() instanceof RuntimeException) throw (RuntimeException) e.getCause();
+            } catch (Throwable e) {}
+        }
+
+        @Override
+        public SubDataClient getConnection() {
+            return client;
+        }
+
+        @Override
+        public SubDataProtocol getProtocol() {
+            return client.getProtocol();
+        }
+
+        @Override
+        public UUID getID() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof DataSender) {
+                return id.equals(((DataSender) obj).id);
+            } else return super.equals(obj);
+        }
+    }
 
     /**
      * New PacketForwardPacket (Out)
@@ -32,19 +97,42 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
     }
 
     @Override
-    public void send(SubDataClient client, OutputStream data) throws Throwable {
+    public void send(SubDataSender sender, OutputStream data) throws Throwable {
         data.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).array());
         data.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getLeastSignificantBits()).array());
-        Util.reflect(SubDataClient.class.getDeclaredMethod("write", PacketOut.class, OutputStream.class), client, packet, data);
+        Util.reflect(SubDataClient.class.getDeclaredMethod("write", SubDataSender.class, PacketOut.class, OutputStream.class), sender.getConnection(), new DataSender(sender.getConnection(), id), packet, data);
     }
 
     @Override
-    public void receive(SubDataClient client, InputStream data) throws Throwable {
-        Util.reflect(SubDataClient.class.getDeclaredMethod("read", Container.class, InputStream.class), client, new Container<>(false), data);
+    public void receive(SubDataSender sender, InputStream in) throws Throwable {
+        ByteArrayOutputStream pending = new ByteArrayOutputStream();
+        long id_p1 = -1, id_p2 = -1;
+
+        int b, position = 0;
+        while (position < 16 && (b = in.read()) != -1) {
+            position++;
+            pending.write(b);
+            switch (position) {
+                case 8:
+                    id_p1 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
+                    pending.reset();
+                    break;
+                case 16:
+                    id_p2 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
+                    pending.reset();
+                    break;
+            }
+        }
+
+        if (position >= 16) {
+            Util.reflect(SubDataClient.class.getDeclaredMethod("read", SubDataSender.class, Container.class, InputStream.class), sender.getConnection(), new DataSender(sender.getConnection(), new UUID(id_p1, id_p2)), new Container<>(false), in);
+        } else {
+            throw new IllegalArgumentException("Invalid UUID data for Sender ID: [" + id_p1 + ", " + id_p2 + "]");
+        }
     }
 
     @Override
     public int version() {
-        return 0x0001;
+        return 0x0002;
     }
 }

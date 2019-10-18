@@ -1,7 +1,7 @@
 package net.ME1312.SubData.Client.Protocol;
 
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.SubData.Client.DataClient;
+import net.ME1312.SubData.Client.DataSender;
 import net.ME1312.SubData.Client.Library.MessagePackHandler;
 import org.msgpack.core.MessagePack;
 
@@ -17,14 +17,14 @@ public interface MessageObjectOut<K> extends MessageStreamOut {
     /**
      * Sends data within the outgoing Message
      *
-     * @param client Client sending
+     * @param sender The receiving Sender
      * @return Data
      */
-    ObjectMap<K> send(DataClient client) throws Throwable;
+    ObjectMap<K> send(DataSender sender) throws Throwable;
 
     @Override
-    default void send(DataClient client, OutputStream data) throws Throwable {
-        ObjectMap<K> output = send(client);
+    default void send(DataSender sender, OutputStream data) throws Throwable {
+        ObjectMap<K> output = send(sender);
         if (output != null) MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
         else data.close();
     }

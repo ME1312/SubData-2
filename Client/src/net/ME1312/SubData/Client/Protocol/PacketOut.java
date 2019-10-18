@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Client.Protocol;
 
-import net.ME1312.SubData.Client.SubDataClient;
+import net.ME1312.SubData.Client.SubDataSender;
 
 /**
  * Packet Out Layout Class
@@ -10,9 +10,9 @@ public interface PacketOut {
     /**
      * An Event called when the Packet is being sent
      *
-     * @param client Client sending
+     * @param sender The receiving Sender
      */
-    default void sending(SubDataClient client) throws Throwable {
+    default void sending(SubDataSender sender) throws Throwable {
 
     }
 

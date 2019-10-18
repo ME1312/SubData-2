@@ -15,9 +15,7 @@ import net.ME1312.SubData.Server.Protocol.*;
 import net.ME1312.SubData.Server.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Server.Protocol.Initial.InitialPacket;
 import net.ME1312.SubData.Server.Protocol.Initial.InitialProtocol;
-import net.ME1312.SubData.Server.Protocol.Internal.PacketDisconnect;
-import net.ME1312.SubData.Server.Protocol.Internal.PacketDisconnectUnderstood;
-import net.ME1312.SubData.Server.Protocol.Internal.PacketSendMessage;
+import net.ME1312.SubData.Server.Protocol.Internal.*;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +40,7 @@ public class SubDataClient extends DataClient {
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
     private SubDataServer subdata;
+    private SubDataClient next;
     private ConnectionState state;
     private Timer timeout;
 
@@ -349,8 +348,9 @@ public class SubDataClient extends DataClient {
                 sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
             } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
                 sendPacketLater(packet, READY);
-            } else if (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) {
-                // do nothing
+            } else if (state == CLOSED || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
+                if (next == null) sendPacketLater(packet, CLOSED);
+                else next.sendPacket(packet);
             } else {
                 boolean init = false;
 
@@ -373,6 +373,12 @@ public class SubDataClient extends DataClient {
     public void sendMessage(MessageOut message) {
         if (Util.isNull(message)) throw new NullPointerException();
         sendPacket(new PacketSendMessage(message));
+    }
+
+    @Override
+    public void ping(Callback<PingResponse> response) {
+        if (Util.isNull(response)) throw new NullPointerException();
+        sendPacket(new PacketPing(response));
     }
 
     /**
@@ -410,6 +416,36 @@ public class SubDataClient extends DataClient {
     public void setHandler(ClientHandler obj) {
         if (handler != null && Arrays.asList(handler.getSubData()).contains(this)) handler.removeSubData(this);
         handler = obj;
+    }
+
+    @Override
+    public void newChannel(Callback<DataClient> client) {
+        openChannel(client::run);
+    }
+
+    /**
+     * Open an Async Data SubChannel
+     *
+     * @return New SubData Channel
+     */
+    public void openChannel(Callback<SubDataClient> client) {
+        sendPacket(new PacketOpenChannel(client));
+    }
+
+    /**
+     * Reconnect the data stream using another Client
+     *
+     * @param client Client
+     */
+    public void reconnect(SubDataClient client) {
+        if (Util.isNull(client)) throw new NullPointerException();
+        if (state.asInt() < CLOSING.asInt() || next != null) throw new IllegalStateException("Cannot override existing data stream");
+
+        next = client;
+        if (statequeue.keySet().contains(CLOSED)) {
+            for (PacketOut packet : statequeue.get(CLOSED)) next.sendPacket(packet);
+            statequeue.remove(CLOSED);
+        }
     }
 
     public void close() throws IOException {

@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Client.Protocol;
 
-import net.ME1312.SubData.Client.DataClient;
+import net.ME1312.SubData.Client.DataSender;
 
 import java.io.OutputStream;
 
@@ -12,8 +12,8 @@ public interface MessageStreamOut extends MessageOut {
     /**
      * Sends data within the outgoing Message
      *
-     * @param client Client sending
+     * @param sender The receiving Sender
      * @param data Data Stream
      */
-    void send(DataClient client, OutputStream data) throws Throwable;
+    void send(DataSender sender, OutputStream data) throws Throwable;
 }

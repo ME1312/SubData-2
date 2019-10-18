@@ -5,6 +5,8 @@ import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.NamedContainer;
 import net.ME1312.SubData.Client.Library.DisconnectReason;
+import net.ME1312.SubData.Client.Library.PingResponse;
+import net.ME1312.SubData.Client.Protocol.Forwardable;
 import net.ME1312.SubData.Client.Protocol.MessageOut;
 
 import java.io.IOException;
@@ -17,7 +19,7 @@ import java.util.UUID;
 /**
  * SubData Client API Class
  */
-public abstract class DataClient {
+public abstract class DataClient implements DataSender {
     public final Events on = new Events();
     private UUID id;
 
@@ -77,9 +79,25 @@ public abstract class DataClient {
     public abstract void getClients(Callback<Map<UUID, ? extends ObjectMap<String>>> callback);
 
     /**
+     * Ping the Server
+     *
+     * @param response Ping Response
+     */
+    public abstract void ping(Callback<PingResponse> response);
+
+    /**
+     * Ping a remote Client
+     *
+     * @param id Client ID
+     * @param response Ping Response
+     */
+    public abstract void ping(UUID id, Callback<PingResponse> response);
+
+    /**
      * Send a message to the Server
      *
      * @param message Message to send
+     * @see net.ME1312.SubData.Client.Protocol.ForwardOnly Packets must <b><u>NOT</u></b> e tagged as Forward-Only
      */
     public abstract void sendMessage(MessageOut message);
 
@@ -88,8 +106,20 @@ public abstract class DataClient {
      *
      * @param id Client ID
      * @param message Message to send
+     * @see net.ME1312.SubData.Client.Protocol.Forwardable Messages must be tagged as Forwardable
      */
-    public abstract void forwardMessage(UUID id, MessageOut message);
+    public abstract <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut message);
+
+    /**
+     * Get the Client that connects the Server to us
+     *
+     * @deprecated The Client connection to the Server is this
+     * @return This Client
+     */
+    @Deprecated
+    public DataClient getConnection() {
+        return this;
+    }
 
     /**
      * Get the Protocol for this Client
@@ -119,7 +149,7 @@ public abstract class DataClient {
      *
      * @return New SubData Channel
      */
-    public abstract DataClient newChannel() throws IOException;
+    public abstract DataClient openChannel() throws IOException;
 
     /**
      * Closes the connection

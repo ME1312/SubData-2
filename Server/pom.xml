@@ -24,6 +24,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.msgpack</groupId>
+            <artifactId>msgpack-core</artifactId>
+            <version>0.8.16</version>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>net.ME1312.SubData</groupId>
             <artifactId>ServerAPI</artifactId>
             <version>-PLACEHOLDER</version>
