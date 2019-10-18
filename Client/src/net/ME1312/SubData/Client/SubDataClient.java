@@ -141,7 +141,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                                     Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
                             }
                         });
-                        while (open.get()) Thread.sleep(125);
+                        if (sender == this) while (open.get()) Thread.sleep(125);
                     }
                 }
             }
@@ -272,7 +272,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     Util.isException(forward::close);
                 }
             });
-            while (open.get()) Thread.sleep(125);
+            if (sender == this) while (open.get()) Thread.sleep(125);
         } catch (Throwable e) {
             DebugUtil.logException(e, log);
             Util.isException(data::close);
