@@ -115,7 +115,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (sender instanceof PacketForwardPacket.DataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException("The handler does not support forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException("The handler does not support forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException("The handler does not support non-forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     if (!packet.isCompatible(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support packet version " + DebugUtil.toHex(0xFFFF, packet.version()) + ": [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
@@ -493,6 +493,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
      */
     public void reconnect(SubDataClient client) {
         if (Util.isNull(client)) throw new NullPointerException();
+        if (client == this) throw new IllegalArgumentException("Cannot reconnect to 'this'");
         if (state.asInt() < CLOSING.asInt() || next != null) throw new IllegalStateException("Cannot override existing data stream");
 
         next = client;

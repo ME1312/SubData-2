@@ -439,6 +439,7 @@ public class SubDataClient extends DataClient {
      */
     public void reconnect(SubDataClient client) {
         if (Util.isNull(client)) throw new NullPointerException();
+        if (client == this) throw new IllegalArgumentException("Cannot reconnect to 'this'");
         if (state.asInt() < CLOSING.asInt() || next != null) throw new IllegalStateException("Cannot override existing data stream");
 
         next = client;

@@ -5,6 +5,7 @@ import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.DataProtocol;
 import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Client.Library.Exception.IllegalSenderException;
+import net.ME1312.SubData.Client.Library.ForwardedDataSender;
 import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.SubDataClient;
 import net.ME1312.SubData.Client.SubDataSender;
@@ -63,7 +64,7 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
         if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
-        if (sender instanceof PacketForwardPacket.DataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("The handler does not support forwarded messages: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
+        if (sender instanceof ForwardedDataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("The handler does not support forwarded messages: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
         if (sender instanceof SubDataClient && message instanceof ForwardOnly) throw new IllegalSenderException("The handler does not support non-forwarded messages: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
         if (!message.isCompatible(version)) throw new IllegalMessageException("The handler does not support this message version (\"" + message.version() + "\"): [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
         message.receive(sender);
