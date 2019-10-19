@@ -294,15 +294,17 @@ public class SubDataClient extends DataClient {
                             @Override
                             public void write(int b) throws IOException {
                                 if (open) {
-                                    switch (b) {
-                                        case '\u0010': // [DLE] (Escape character)
-                                        case '\u0018': // [CAN] (Reader Reset character)
-                                        case '\u0017': // [ETB] (End of Packet character)
-                                            out.write('\u0010');
-                                            break;
-                                    }
-                                    out.write(b);
-                                    out.flush();
+                                    if (!socket.isClosed()) {
+                                        switch (b) {
+                                            case '\u0010': // [DLE] (Escape character)
+                                            case '\u0018': // [CAN] (Reader Reset character)
+                                            case '\u0017': // [ETB] (End of Packet character)
+                                                out.write('\u0010');
+                                                break;
+                                        }
+                                        out.write(b);
+                                        out.flush();
+                                    } else open = false;
                                 }
                             }
 
@@ -310,10 +312,12 @@ public class SubDataClient extends DataClient {
                             public void close() throws IOException {
                                 if (open) {
                                     open = false;
-                                    out.write('\u0017');
-                                    out.flush();
-                                    if (queue != null && queue.size() > 0) SubDataClient.this.write();
-                                    else queue = null;
+                                    if (!socket.isClosed()) {
+                                        out.write('\u0017');
+                                        out.flush();
+                                        if (queue != null && queue.size() > 0) SubDataClient.this.write();
+                                        else queue = null;
+                                    }
                                 }
                             }
                         };
@@ -343,25 +347,23 @@ public class SubDataClient extends DataClient {
      */
     public void sendPacket(PacketOut packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (!isClosed()) {
-            if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
-                sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
-            } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
-                sendPacketLater(packet, READY);
-            } else if (state == CLOSED || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
-                if (next == null) sendPacketLater(packet, CLOSED);
-                else next.sendPacket(packet);
-            } else {
-                boolean init = false;
+        if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
+            if (next == null) sendPacketLater(packet, CLOSED);
+            else next.sendPacket(packet);
+        } else if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
+            sendPacketLater(packet, (packet instanceof InitialPacket) ? POST_INITIALIZATION : READY);
+        } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
+            sendPacketLater(packet, READY);
+        } else {
+            boolean init = false;
 
-                if (queue == null) {
-                    queue = new LinkedList<>();
-                    init = true;
-                }
-                queue.add(packet);
-
-                if (init) write();
+            if (queue == null) {
+                queue = new LinkedList<>();
+                init = true;
             }
+            queue.add(packet);
+
+            if (init) write();
         }
     }
     private void sendPacketLater(PacketOut packet, ConnectionState state) {
