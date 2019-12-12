@@ -12,7 +12,7 @@
     <repositories>
         <repository>
             <id>ME1312.net Repository</id>
-            <url>https://src.ME1312.net/maven</url>
+            <url>https://dev.me1312.net/maven</url>
         </repository>
     </repositories>
 
@@ -123,7 +123,7 @@
                                 <dependencySourceInclude>net.ME1312.SubData:ClientAPI:*</dependencySourceInclude>
                             </dependencySourceIncludes>
                             <links>
-                                <link>https://src.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiUtil/</link>
+                                <link>https://dev.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiUtil/</link>
                             </links>
                         </configuration>
                     </execution>
