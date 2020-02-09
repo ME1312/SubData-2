@@ -283,49 +283,54 @@ public class SubDataClient extends DataClient {
                     PacketOut next = Util.getDespiteException(() -> queue.get(0), null);
                     Util.isException(() -> queue.remove(0));
                     if (next != null) {
-                        PipedOutputStream data = new PipedOutputStream();
-                        PipedInputStream raw = new PipedInputStream(data, 1024);
-                        new Thread(() -> write(next, data), "SubDataServer::Packet_Writer(" + address.toString() + ')').start();
+                        if (state != CLOSING || next instanceof PacketDisconnect || next instanceof PacketDisconnectUnderstood) {
+                            PipedOutputStream data = new PipedOutputStream();
+                            PipedInputStream raw = new PipedInputStream(data, 1024);
+                            new Thread(() -> write(next, data), "SubDataServer::Packet_Writer(" + address.toString() + ')').start();
 
-                        // Step 5 // Add Escapes to the Encrypted Data
-                        OutputStream forward = new OutputStream() {
-                            boolean open = true;
+                            // Step 5 // Add Escapes to the Encrypted Data
+                            OutputStream forward = new OutputStream() {
+                                boolean open = true;
 
-                            @Override
-                            public void write(int b) throws IOException {
-                                if (open) {
-                                    if (!socket.isClosed()) {
-                                        switch (b) {
-                                            case '\u0010': // [DLE] (Escape character)
-                                            case '\u0018': // [CAN] (Reader Reset character)
-                                            case '\u0017': // [ETB] (End of Packet character)
-                                                out.write('\u0010');
-                                                break;
-                                        }
-                                        out.write(b);
-                                        out.flush();
-                                    } else open = false;
-                                }
-                            }
-
-                            @Override
-                            public void close() throws IOException {
-                                if (open) {
-                                    open = false;
-                                    if (!socket.isClosed()) {
-                                        out.write('\u0017');
-                                        out.flush();
-                                        if (queue != null && queue.size() > 0) SubDataClient.this.write();
-                                        else queue = null;
+                                @Override
+                                public void write(int b) throws IOException {
+                                    if (open) {
+                                        if (!socket.isClosed()) {
+                                            switch (b) {
+                                                case '\u0010': // [DLE] (Escape character)
+                                                case '\u0018': // [CAN] (Reader Reset character)
+                                                case '\u0017': // [ETB] (End of Packet character)
+                                                    out.write('\u0010');
+                                                    break;
+                                            }
+                                            out.write(b);
+                                            out.flush();
+                                        } else open = false;
                                     }
                                 }
-                            }
-                        };
 
-                        // Step 4 // Encrypt the Data
-                        cipher.encrypt(raw, forward);
-                        forward.close();
-                        raw.close();
+                                @Override
+                                public void close() throws IOException {
+                                    if (open) {
+                                        open = false;
+                                        if (!socket.isClosed()) {
+                                            out.write('\u0017');
+                                            out.flush();
+                                            if (queue != null && queue.size() > 0) SubDataClient.this.write();
+                                            else queue = null;
+                                        }
+                                    }
+                                }
+                            };
+
+                            // Step 4 // Encrypt the Data
+                            cipher.encrypt(raw, forward);
+                            forward.close();
+                            raw.close();
+                        } else {
+                            // Re-queue any pending packets during the CLOSING state
+                            sendPacket(next);
+                        }
                     }
                 } catch (Throwable e) {
                     Util.isException(() -> queue.remove(0));
@@ -351,7 +356,7 @@ public class SubDataClient extends DataClient {
             if (next == null) sendPacketLater(packet, CLOSED);
             else next.sendPacket(packet);
         } else if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
-            sendPacketLater(packet, (packet instanceof InitialPacket) ? POST_INITIALIZATION : READY);
+            sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
         } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
             sendPacketLater(packet, READY);
         } else {

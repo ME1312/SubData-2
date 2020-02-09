@@ -4,21 +4,26 @@ import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Library.PingResponse;
-import net.ME1312.SubData.Client.Protocol.Forwardable;
-import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
-import net.ME1312.SubData.Client.Protocol.PacketObjectOut;
+import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.SubDataSender;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Calendar;
+import java.util.UUID;
 
-import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.callbacks;
+import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.*;
 
 /**
  * Ping Response Packet
  */
-public class PacketPingResponse implements Forwardable, PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private ObjectMap<Integer> data;
-    private long init;
+public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketStreamIn {
+    private UUID tracker;
+    private long init, queue;
 
     /**
      * New PacketPingResponse (In)
@@ -28,32 +33,70 @@ public class PacketPingResponse implements Forwardable, PacketObjectOut<Integer>
     /**
      * New PacketPingResponse (Out)
      *
-     * @param data Previous Data
+     * @param tracker UUID Tracker
      */
-    public PacketPingResponse(ObjectMap<Integer> data) {
-        if (Util.isNull(data)) throw new NullPointerException();
-        init = Calendar.getInstance().getTime().getTime();
-        this.data = data;
+    public PacketPingResponse(UUID tracker) throws IOException {
+        this.tracker = tracker;
+        this.init = Calendar.getInstance().getTime().getTime();
     }
 
     @Override
-    public ObjectMap<Integer> send(SubDataSender sender) throws Throwable {
-        data.set(0x0003, init); // Object Initialization (Remote)
-        data.set(0x0004, Calendar.getInstance().getTime().getTime()); // On Send (Remote)
-        return data;
+    public void send(SubDataSender sender, OutputStream out) throws Throwable {
+        queue = Calendar.getInstance().getTime().getTime();
+
+        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(tracker.getMostSignificantBits()).array());
+        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(tracker.getLeastSignificantBits()).array());
+        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(init).array());  // Object Initialization (Remote) [2]
+        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(queue).array()); // On Send (Remote) [3]
+        out.close();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
-        data.set(0x0005, Calendar.getInstance().getTime().getTime()); // Transaction Complete
+    public void receive(SubDataSender sender, InputStream in) throws Throwable {
+        ByteArrayOutputStream pending = new ByteArrayOutputStream();
+        long id_p1 = -1, id_p2 = -1;
+        long[] timings = new long[5];
 
-        for (Callback<PingResponse> callback : callbacks.get(data.getRawString(0x0000))) callback.run(new PingResponse(data));
-        callbacks.remove(data.getRawString(0x0000));
+        int b, position = 0;
+        while (position < 32 && (b = in.read()) != -1) {
+            position++;
+            pending.write(b);
+            switch (position) {
+                case 8:
+                    id_p1 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
+                    pending.reset();
+                    break;
+                case 16:
+                    id_p2 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
+                    pending.reset();
+                    break;
+                case 24:
+                    timings[2] = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
+                    pending.reset();
+                    break;
+                case 32:
+                    timings[3] = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
+                    pending.reset();
+                    break;
+            }
+        }
+
+        UUID id = new UUID(id_p1, id_p2);
+        if (data.keySet().contains(id)) {
+            timings[4] = Calendar.getInstance().getTime().getTime(); // Transaction Complete [4]
+
+            timings[0] = data.get(id).init;
+            timings[1] = data.get(id).queue;
+
+            for (Callback<PingResponse> callback : callbacks.get(id)) callback.run(new PingResponse(timings));
+            callbacks.remove(id);
+            data.remove(id);
+        }
     }
 
     @Override
     public int version() {
-        return 0x0001;
+        return 0x0002;
     }
 }

@@ -1,18 +1,21 @@
 package net.ME1312.SubData.Server.Library;
 
-import net.ME1312.Galaxi.Library.Map.ObjectMap;
-
 /**
  * Ping Response Class
  */
 public class PingResponse {
     private final long qL, qR, n1, n2;
 
-    public PingResponse(ObjectMap<Integer> result) {
-        qL = result.getLong(0x0002) - result.getLong(0x0001);
-        qR = result.getLong(0x0004) - result.getLong(0x0003);
-        n1 = result.getLong(0x0003) - result.getLong(0x0002);
-        n2 = result.getLong(0x0005) - result.getLong(0x0004);
+    /**
+     * Calculates and stores the meaning of a ping using it's recorded timings
+     *
+     * @param timings Ping Timings
+     */
+    public PingResponse(long[] timings) {
+        qL = timings[1] - timings[0];
+        qR = timings[3] - timings[2];
+        n1 = timings[2] - timings[1];
+        n2 = timings[4] - timings[3];
     }
 
     /**

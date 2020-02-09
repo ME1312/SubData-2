@@ -12,9 +12,9 @@ public enum DisconnectReason {
     /**
      * SubData disconnected because:<br/>
      * <ul>
-     *     <li>The client could not meet the encryption standards</li>
-     *     <li>The client was using the right encryption, but the wrong key to encrypt with</li>
-     *     <li>The client began sending unintelligible data after the encryption request</li>
+     *     <li>We could not meet the server's encryption standards</li>
+     *     <li>We were using the right encryption, but the wrong key to encrypt with</li>
+     *     <li>The server began sending unintelligible data after the encryption request</li>
      * </ul>
      */
     ENCRYPTION_MISMATCH,

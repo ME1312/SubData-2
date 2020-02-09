@@ -23,8 +23,8 @@ import java.util.logging.Logger;
  * SubData Protocol Class
  */
 public class SubDataProtocol extends DataProtocol {
-    public static int MIN_PACKET_ID = 0x0000;
-    public static int MAX_PACKET_ID = 0xFFEF;
+    public static final int MIN_PACKET_ID = 0x0000;
+    public static final int MAX_PACKET_ID = 0xFFEF;
 
     final HashMap<String, Cipher> ciphers = new HashMap<String, Cipher>();
     final HashMap<Class<? extends PacketOut>, Integer> pOut = new HashMap<Class<? extends PacketOut>, Integer>();
