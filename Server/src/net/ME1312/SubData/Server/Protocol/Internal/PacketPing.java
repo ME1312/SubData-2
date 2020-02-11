@@ -88,6 +88,6 @@ public class PacketPing implements PacketStreamOut, PacketStreamIn {
 
     @Override
     public int version() {
-        return 0x0002;
+        return 0x0001;
     }
 }

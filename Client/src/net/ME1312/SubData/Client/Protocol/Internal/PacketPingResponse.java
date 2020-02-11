@@ -97,6 +97,6 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
 
     @Override
     public int version() {
-        return 0x0002;
+        return 0x0001;
     }
 }

@@ -7,6 +7,7 @@ import net.ME1312.SubData.Server.*;
 import net.ME1312.SubData.Server.Library.ConnectionState;
 import net.ME1312.SubData.Server.Library.DebugUtil;
 import net.ME1312.SubData.Server.Library.DisconnectReason;
+import net.ME1312.SubData.Server.Library.EscapedOutputStream;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Server.Protocol.PacketIn;
 import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
@@ -55,8 +56,9 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
             int level = Util.<Integer>reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client) + 1;
             Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client, level);
-            client.getSocket().getOutputStream().write('\u0018');
-            client.getSocket().getOutputStream().flush();
+            EscapedOutputStream out = Util.reflect(SubDataClient.class.getDeclaredField("out"), client);
+            out.control('\u0018');
+            out.flush();
             String cipher = Util.reflect(SubDataServer.class.getDeclaredField("cipher"), client.getServer());
             if (level < ((cipher.contains("/"))?cipher.split("/"):new String[]{cipher}).length) {
                 client.sendPacket(this);

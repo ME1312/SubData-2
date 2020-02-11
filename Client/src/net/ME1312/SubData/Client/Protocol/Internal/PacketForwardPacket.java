@@ -71,6 +71,6 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
 
     @Override
     public int version() {
-        return 0x0002;
+        return 0x0001;
     }
 }

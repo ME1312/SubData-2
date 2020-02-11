@@ -6,6 +6,7 @@ import net.ME1312.SubData.Client.*;
 import net.ME1312.SubData.Client.Library.ConnectionState;
 import net.ME1312.SubData.Client.Library.DebugUtil;
 import net.ME1312.SubData.Client.Library.DisconnectReason;
+import net.ME1312.SubData.Client.Library.EscapedOutputStream;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
@@ -39,8 +40,9 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
                 Util.reflect(SubDataClient.class.getDeclaredField("cipher"), sender.getConnection(), next);
                 Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection(), Util.<Integer>reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection()) + 1);
 
-                sender.getConnection().getSocket().getOutputStream().write('\u0018');
-                sender.getConnection().getSocket().getOutputStream().flush();
+                EscapedOutputStream out = Util.reflect(SubDataClient.class.getDeclaredField("out"), sender.getConnection());
+                out.control('\u0018');
+                out.flush();
                 sender.sendPacket(this);
             } else {
                 DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + cipher + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataClient.class.getDeclaredField("log"), sender.getConnection()));

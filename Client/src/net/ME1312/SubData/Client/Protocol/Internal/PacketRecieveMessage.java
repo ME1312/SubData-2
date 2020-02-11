@@ -31,30 +31,35 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
         int b, state = 0;
         while (state < 3 && (b = data.read()) != -1) {
             if (escaped) {
-                pending.write(b);
+                switch (b) {
+                    case '\u0010': // [DLE] (Escape character)
+                        pending.write('\u0010');
+                        break;
+                    case '\u0003': // [ETX] (End of String character)
+                        switch (state) {
+                            case 0:
+                                channel = new String(pending.toByteArray(), StandardCharsets.UTF_8);
+                                break;
+                            case 1:
+                                handle = new String(pending.toByteArray(), StandardCharsets.UTF_8);
+                                break;
+                            case 2:
+                                version = Version.fromString(new String(pending.toByteArray(), StandardCharsets.UTF_8));
+                                break;
+                        }
+                        pending.reset();
+                        state++;
+                        break;
+                    default:
+                        pending.write('\u0010');
+                        pending.write(b);
+                        break;
+                }
                 escaped = false;
-            } else if (state < 3) switch (b) {
-                case '\u0002': // [STX] (Escape character)
-                    escaped = true;
-                    break;
-                case '\u0003': // [ETX] (State change character)
-                    switch (state) {
-                        case 0:
-                            channel = new String(pending.toByteArray(), StandardCharsets.UTF_8);
-                            break;
-                        case 1:
-                            handle = new String(pending.toByteArray(), StandardCharsets.UTF_8);
-                            break;
-                        case 2:
-                            version = Version.fromString(new String(pending.toByteArray(), StandardCharsets.UTF_8));
-                            break;
-                    }
-                    pending.reset();
-                    state++;
-                    break;
-                default:
-                    pending.write(b);
-                    break;
+            } else if (b == '\u0010') {
+                escaped = true;
+            } else {
+                pending.write(b);
             }
         }
 

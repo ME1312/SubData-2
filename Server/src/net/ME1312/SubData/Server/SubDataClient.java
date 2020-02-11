@@ -36,7 +36,7 @@ public class SubDataClient extends DataClient {
     private ClientHandler handler;
     private LinkedList<PacketOut> queue;
     private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
-    private OutputStream out;
+    private EscapedOutputStream out;
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
     private SubDataServer subdata;
@@ -49,7 +49,7 @@ public class SubDataClient extends DataClient {
         this.subdata = subdata;
         state = PRE_INITIALIZATION;
         socket = client;
-        out = client.getOutputStream();
+        out = new EscapedOutputStream(client.getOutputStream(), '\u0010', '\u0018', '\u0017');
         queue = null;
         statequeue = new HashMap<>();
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
@@ -119,7 +119,7 @@ public class SubDataClient extends DataClient {
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + ']'), subdata.log);
+                        DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), subdata.log);
                         close(PROTOCOL_MISMATCH);
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
@@ -164,21 +164,32 @@ public class SubDataClient extends DataClient {
                 InputStream raw = new InputStream() {
                     boolean open = true;
                     boolean finished = false;
+                    Integer pending = null;
 
-                    private int next() throws IOException {
-                        int b = in.read();
+                    private int next() throws IOException { // TODO
+                        int b = (pending != null)?pending:in.read();
+                        pending = null;
+
                         switch (b) {
                             case -1:
                                 throw new EndOfStreamException();
-                            case '\u0010': // [DLE] (Escape character)
-                                b = in.read();
-                                break;
-                            case '\u0018': // [CAN] (Read Reset character)
-                                if (state != PRE_INITIALIZATION)
-                                    reset.set(true);
-                            case '\u0017': // [ETB] (End of Packet character)
-                                finished = true;
-                                b = -1;
+                            case '\u0010':
+                                int next = in.read();
+                                switch (next) {
+                                    case '\u0010': // [DLE] (Escape character)
+                                        /* no action necessary */
+                                        break;
+                                    case '\u0018': // [CAN] (Read Reset character)
+                                        if (state != PRE_INITIALIZATION)
+                                            reset.set(true);
+                                    case '\u0017': // [ETB] (End of Packet character)
+                                        finished = true;
+                                        b = -1;
+                                        break;
+                                    default:
+                                        pending = next;
+                                        break;
+                                }
                                 break;
                         }
                         return b;
@@ -297,13 +308,6 @@ public class SubDataClient extends DataClient {
                                     public void write(int b) throws IOException {
                                         if (open) {
                                             if (!socket.isClosed()) {
-                                                switch (b) {
-                                                    case '\u0010': // [DLE] (Escape character)
-                                                    case '\u0018': // [CAN] (Reader Reset character)
-                                                    case '\u0017': // [ETB] (End of Packet character)
-                                                        out.write('\u0010');
-                                                        break;
-                                                }
                                                 out.write(b);
                                                 out.flush();
                                             } else open = false;
@@ -315,7 +319,7 @@ public class SubDataClient extends DataClient {
                                         if (open) {
                                             open = false;
                                             if (!socket.isClosed()) {
-                                                out.write('\u0017');
+                                                out.control('\u0017');
                                                 out.flush();
                                                 if (queue != null && queue.size() > 0) SubDataClient.this.write();
                                                 else queue = null;
