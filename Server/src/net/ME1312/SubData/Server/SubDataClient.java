@@ -217,13 +217,14 @@ public class SubDataClient extends DataClient {
                         }
                     }
                 };
+                
+                PipedInputStream data = new PipedInputStream(1024);
+                PipedOutputStream forward = new PipedOutputStream(data);
 
                 // Step 3 // Parse the SubData Packet Formatting
-                PipedInputStream data = new PipedInputStream(1024);
                 new Thread(() -> read(reset, data), "SubDataServer::Packet_Listener(" + address.toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
-                PipedOutputStream forward = new PipedOutputStream(data);
                 cipher.decrypt(raw, forward);
                 forward.close();
 

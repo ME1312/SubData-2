@@ -220,12 +220,13 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     }
                 };
 
-                // Step 3 // Parse the SubData Packet Formatting
                 PipedInputStream data = new PipedInputStream(1024);
+                PipedOutputStream forward = new PipedOutputStream(data);
+
+                // Step 3 // Parse the SubData Packet Formatting
                 new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
-                PipedOutputStream forward = new PipedOutputStream(data);
                 cipher.decrypt(raw, forward);
                 forward.close();
 
