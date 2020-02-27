@@ -57,7 +57,7 @@ public class SubDataClient extends DataClient {
         timeout.schedule(new TimerTask() {
             @Override
             public void run() {
-                if (state.asInt() < READY.asInt()) try {
+                if (state.asInt() < POST_INITIALIZATION.asInt()) try {
                     close(INITIALIZATION_TIMEOUT);
                 } catch (IOException e) {
                     DebugUtil.logException(e, subdata.log);
@@ -298,11 +298,11 @@ public class SubDataClient extends DataClient {
                         if (!isClosed() || !(next instanceof PacketDisconnect || next instanceof PacketDisconnectUnderstood)) { // Disallows Disconnect packets during CLOSED
                             if (!isClosed() && (state != CLOSING || next instanceof PacketDisconnect || next instanceof PacketDisconnectUnderstood)) { // Allows only Disconnect packets during CLOSING
                                 PipedOutputStream data = new PipedOutputStream();
-                                PipedInputStream raw = new PipedInputStream(data, 1024);
+                                PipedInputStream forward = new PipedInputStream(data, 1024);
                                 new Thread(() -> write(next, data), "SubDataServer::Packet_Writer(" + address.toString() + ')').start();
 
                                 // Step 5 // Add Escapes to the Encrypted Data
-                                OutputStream forward = new OutputStream() {
+                                OutputStream raw = new OutputStream() {
                                     boolean open = true;
 
                                     @Override
@@ -330,9 +330,9 @@ public class SubDataClient extends DataClient {
                                 };
 
                                 // Step 4 // Encrypt the Data
-                                cipher.encrypt(raw, forward);
-                                forward.close();
+                                cipher.encrypt(forward, raw);
                                 raw.close();
+                                forward.close();
                             } else {
                                 // Re-queue any pending packets during the CLOSING state
                                 sendPacket(next);

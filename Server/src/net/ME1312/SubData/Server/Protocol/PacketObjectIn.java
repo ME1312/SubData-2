@@ -27,8 +27,8 @@ public interface PacketObjectIn<K> extends PacketStreamIn {
         try {
             receive(client, MessagePackHandler.unpack(MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()));
         } catch (MessageInsufficientBufferException e) {
-            receive(client, (ObjectMap<K>) null);
             data.close();
+            receive(client, (ObjectMap<K>) null);
         }
     }
 }

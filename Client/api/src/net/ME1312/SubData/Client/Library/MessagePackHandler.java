@@ -68,53 +68,48 @@ public class MessagePackHandler {
      */
     @SuppressWarnings("unchecked")
     public static <K> ObjectMap<K> unpack(MapValue msgpack) {
-        ObjectMap<Object> section = new ObjectMap();
-
-        Map<Value, Value> map = msgpack.map();
-        for (Value key : map.keySet()) {
-            section.set(simplify(key, true), simplify(map.get(key), false));
-        }
-
-        return (ObjectMap<K>) section;
+        return (ObjectMap<K>) simplify(msgpack, false);
     }
     private static Object simplify(Value value, boolean asKey) {
-        Object simple = value;
         if (value.isNilValue()) {
-            simple = null;
+            return null;
         } else if (value.isMapValue()) {
-            simple = unpack(value.asMapValue());
+            ObjectMap<Object> section = new ObjectMap<Object>();
+            Map<Value, Value> map = value.asMapValue().map();
+            for (Value key : map.keySet()) section.set(simplify(key, true), simplify(map.get(key), false));
+            return section;
         } else if (value.isArrayValue()) {
             LinkedList<Object> objects = new LinkedList<Object>();
             for (Value v : value.asArrayValue().list()) objects.add(simplify(v, false));
-            simple = objects;
+            return objects;
         } else if (value.isBooleanValue()) {
-            simple = value.asBooleanValue().getBoolean();
+            return value.asBooleanValue().getBoolean();
         } else if (value.isFloatValue()) {
             if (asKey) {
-                simple = value.asIntegerValue().toDouble();
+                return value.asIntegerValue().toDouble();
             } else if (value.asFloatValue().toDouble() == (double)(float) value.asFloatValue().toDouble()) {
-                simple = value.asFloatValue().toFloat();
+                return value.asFloatValue().toFloat();
             } else {
-                simple = value.asFloatValue().toDouble();
+                return value.asFloatValue().toDouble();
             }
         } else if (value.isIntegerValue()) {
             if (asKey) {
-                simple = value.asIntegerValue().asInt();
+                return value.asIntegerValue().asInt();
             } else if (value.asIntegerValue().isInByteRange()) {
-                simple = value.asIntegerValue().asByte();
+                return value.asIntegerValue().asByte();
             } else if (value.asIntegerValue().isInShortRange()) {
-                simple = value.asIntegerValue().asShort();
+                return value.asIntegerValue().asShort();
             } else if (value.asIntegerValue().isInIntRange()) {
-                simple = value.asIntegerValue().asInt();
+                return value.asIntegerValue().asInt();
             } else if (value.asIntegerValue().isInLongRange()) {
-                simple = value.asIntegerValue().asLong();
+                return value.asIntegerValue().asLong();
             } else {
-                simple = value.asIntegerValue().asBigInteger();
+                return value.asIntegerValue().asBigInteger();
             }
         } else if (value.isStringValue()) {
-            simple = value.asStringValue().asString();
+            return value.asStringValue().asString();
+        } else {
+            return value;
         }
-
-        return simple;
     }
 }

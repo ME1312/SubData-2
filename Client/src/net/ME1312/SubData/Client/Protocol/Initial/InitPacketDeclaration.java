@@ -15,7 +15,6 @@ public final class InitPacketDeclaration implements InitialProtocol.Packet, Pack
     public void receive(SubDataSender sender) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == ConnectionState.PRE_INITIALIZATION) {
             Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection(), ConnectionState.INITIALIZATION);
-            sender.sendPacket(this);
         }
     }
 

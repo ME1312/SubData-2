@@ -23,7 +23,6 @@ public abstract class DataProtocol {
      *
      * @return Protocol Name
      */
-
     public abstract String getName();
 
     /**
