@@ -9,9 +9,9 @@ public interface SubDataSender extends DataSender {
     /**
      * Send a packet to the Sender
      *
-     * @param packet Packet to send
+     * @param packets Packets to send
      */
-    void sendPacket(PacketOut packet);
+    void sendPacket(PacketOut... packets);
 
     /**
      * Get the Client that connects this Sender to us

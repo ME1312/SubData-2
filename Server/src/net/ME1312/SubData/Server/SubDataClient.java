@@ -355,25 +355,33 @@ public class SubDataClient extends DataClient {
     /**
      * Send a packet to the Client
      *
-     * @param packet Packet to send
+     * @param packets Packets to send
      */
-    public void sendPacket(PacketOut packet) {
-        if (Util.isNull(packet)) throw new NullPointerException();
-        if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
-            if (next == null) sendPacketLater(packet, CLOSED);
-            else next.sendPacket(packet);
-        } else if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
-            sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
-        } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
-            sendPacketLater(packet, READY);
-        } else {
+    public void sendPacket(PacketOut... packets) {
+        List<PacketOut> list = new ArrayList<>();
+
+        for (PacketOut packet : packets) {
+            if (Util.isNull(packet)) throw new NullPointerException();
+            if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
+                if (next == null) sendPacketLater(packet, CLOSED);
+                else next.sendPacket(packet);
+            } else if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
+                sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
+            } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
+                sendPacketLater(packet, READY);
+            } else {
+                list.add(packet);
+            }
+        }
+
+        if (list.size() > 0) {
             boolean init = false;
 
             if (queue == null) {
                 queue = new LinkedList<>();
                 init = true;
             }
-            queue.add(packet);
+            queue.addAll(list);
 
             if (init) write();
         }
@@ -384,9 +392,13 @@ public class SubDataClient extends DataClient {
         this.statequeue.put(state, prequeue);
     }
 
-    public void sendMessage(MessageOut message) {
-        if (Util.isNull(message)) throw new NullPointerException();
-        sendPacket(new PacketSendMessage(message));
+    public void sendMessage(MessageOut... messages) {
+        List<PacketOut> list = new ArrayList<>();
+        for (MessageOut message : messages) {
+            if (Util.isNull(message)) throw new NullPointerException();
+            list.add(new PacketSendMessage(message));
+        }
+        sendPacket(list.toArray(new PacketOut[0]));
     }
 
     @Override

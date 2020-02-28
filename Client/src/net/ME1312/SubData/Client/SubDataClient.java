@@ -63,7 +63,6 @@ public class SubDataClient extends DataClient implements SubDataSender {
         };
 
         log.info("Connected to " + socket.getRemoteSocketAddress());
-        sendPacket(new InitPacketDeclaration());
         read();
     }
 
@@ -358,27 +357,35 @@ public class SubDataClient extends DataClient implements SubDataSender {
     /**
      * Send a packet to Client
      *
-     * @param packet Packet to send
-     * @see ForwardOnly Packets must <b><u>NOT</u></b> e tagged as Forward-Only
+     * @param packets Packets to send
+     * @see ForwardOnly Packets must <b><u>NOT</u></b> be tagged as Forward-Only
      */
-    public void sendPacket(PacketOut packet) {
-        if (Util.isNull(packet)) throw new NullPointerException();
-        if (packet instanceof ForwardOnly) throw new IllegalPacketException("Packet is Forward-Only");
-        if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
-            if (next == null) sendPacketLater(packet, CLOSED);
-            else next.sendPacket(packet);
-        } else if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
-            sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
-        } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
-            sendPacketLater(packet, READY);
-        } else {
+    public void sendPacket(PacketOut... packets) {
+        List<PacketOut> list = new ArrayList<>();
+
+        for (PacketOut packet : packets) {
+            if (Util.isNull(packet)) throw new NullPointerException();
+            if (packet instanceof ForwardOnly) throw new IllegalPacketException("Packet is Forward-Only");
+            if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
+                if (next == null) sendPacketLater(packet, CLOSED);
+                else next.sendPacket(packet);
+            } else if (state.asInt() < POST_INITIALIZATION.asInt() && !(packet instanceof InitialProtocol.Packet)) {
+                sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
+            } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
+                sendPacketLater(packet, READY);
+            } else {
+                list.add(packet);
+            }
+        }
+
+        if (list.size() > 0) {
             boolean init = false;
 
             if (queue == null) {
                 queue = new LinkedList<>();
                 init = true;
             }
-            queue.add(packet);
+            queue.addAll(list);
 
             if (init) write();
         }
@@ -393,25 +400,39 @@ public class SubDataClient extends DataClient implements SubDataSender {
      * Forward a packet to another Client
      *
      * @param id Client ID
-     * @param packet Packet to send
+     * @param packets Packets to send
      * @see net.ME1312.SubData.Client.Protocol.Forwardable Packets must be tagged as Forwardable
      */
-    public <ForwardablePacketOut extends PacketOut & Forwardable> void forwardPacket(UUID id, ForwardablePacketOut packet) {
-        if (Util.isNull(id, packet)) throw new NullPointerException();
-        if (!(packet instanceof Forwardable)) throw new IllegalPacketException("Packet is not Forwardable");
-        sendPacket(new PacketForwardPacket(id, packet));
+    public <ForwardablePacketOut extends PacketOut & Forwardable> void forwardPacket(UUID id, ForwardablePacketOut... packets) {
+        List<PacketOut> list = new ArrayList<>();
+        for (PacketOut packet : packets) {
+            if (Util.isNull(id, packet)) throw new NullPointerException();
+            if (!(packet instanceof Forwardable)) throw new IllegalPacketException("Packet is not Forwardable");
+            sendPacket(new PacketForwardPacket(id, packet));
+        }
+        sendPacket(list.toArray(new PacketOut[0]));
     }
 
-    public void sendMessage(MessageOut message) {
-        if (Util.isNull(message)) throw new NullPointerException();
-        if (message instanceof ForwardOnly) throw new IllegalMessageException("Message is Forward-Only");
-        sendPacket(new PacketSendMessage(message));
+    public void sendMessage(MessageOut... messages) {
+        List<PacketOut> list = new ArrayList<>();
+        for (MessageOut message : messages) {
+            if (Util.isNull(message)) throw new NullPointerException();
+            if (message instanceof ForwardOnly) throw new IllegalMessageException("Message is Forward-Only");
+            list.add(new PacketSendMessage(message));
+        }
+        sendPacket(list.toArray(new PacketOut[0]));
     }
 
-    public <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut message) {
-        if (Util.isNull(id, message)) throw new NullPointerException();
-        if (!(message instanceof Forwardable)) throw new IllegalMessageException("Message is not Forwardable");
-        forwardPacket(id, new PacketSendMessage(message));
+    public <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut... messages) {
+        if (Util.isNull(id)) throw new NullPointerException();
+
+        List<PacketOut> list = new ArrayList<>();
+        for (MessageOut message : messages) {
+            if (Util.isNull(message)) throw new NullPointerException();
+            if (!(message instanceof Forwardable)) throw new IllegalMessageException("Message is not Forwardable");
+            list.add(new PacketForwardPacket(id, new PacketSendMessage(message)));
+        }
+        sendPacket(list.toArray(new PacketOut[0]));
     }
 
     @Override

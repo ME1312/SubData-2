@@ -96,19 +96,19 @@ public abstract class DataClient implements DataSender {
     /**
      * Send a message to the Server
      *
-     * @param message Message to send
-     * @see net.ME1312.SubData.Client.Protocol.ForwardOnly Packets must <b><u>NOT</u></b> e tagged as Forward-Only
+     * @param messages Messages to send
+     * @see net.ME1312.SubData.Client.Protocol.ForwardOnly Messages must <b><u>NOT</u></b> be tagged as Forward-Only
      */
-    public abstract void sendMessage(MessageOut message);
+    public abstract void sendMessage(MessageOut... messages);
 
     /**
      * Forward a message to another Client
      *
      * @param id Client ID
-     * @param message Message to send
+     * @param messages Messages to send
      * @see net.ME1312.SubData.Client.Protocol.Forwardable Messages must be tagged as Forwardable
      */
-    public abstract <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut message);
+    public abstract <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut... messages);
 
     /**
      * Get the Client that connects the Server to us

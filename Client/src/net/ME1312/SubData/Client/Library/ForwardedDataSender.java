@@ -34,18 +34,18 @@ public class ForwardedDataSender implements SubDataSender {
     }
 
     @Override
-    public void sendPacket(PacketOut packet) {
+    public void sendPacket(PacketOut... packets) {
         try {
-            SubDataClient.class.getMethod("forwardPacket", UUID.class, PacketOut.class).invoke(client, id, packet);
+            SubDataClient.class.getMethod("forwardPacket", UUID.class, PacketOut[].class).invoke(client, id, packets);
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof RuntimeException) throw (RuntimeException) e.getCause();
         } catch (Throwable e) {}
     }
 
     @Override
-    public void sendMessage(MessageOut message) {
+    public void sendMessage(MessageOut... messages) {
         try {
-            SubDataClient.class.getMethod("forwardMessage", UUID.class, MessageOut.class).invoke(client, id, message);
+            SubDataClient.class.getMethod("forwardMessage", UUID.class, MessageOut[].class).invoke(client, id, messages);
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof RuntimeException) throw (RuntimeException) e.getCause();
         } catch (Throwable e) {}

@@ -71,9 +71,9 @@ public abstract class DataClient {
     /**
      * Send a message to the Client
      *
-     * @param message Message to send
+     * @param messages Messages to send
      */
-    public abstract void sendMessage(MessageOut message);
+    public abstract void sendMessage(MessageOut... messages);
 
     /**
      * Get the Server this Client belongs to

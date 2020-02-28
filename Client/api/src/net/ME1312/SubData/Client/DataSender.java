@@ -21,9 +21,9 @@ public interface DataSender {
     /**
      * Send a message to the Sender
      *
-     * @param message Message to send
+     * @param messages Messages to send
      */
-    void sendMessage(MessageOut message);
+    void sendMessage(MessageOut... messages);
 
     /**
      * Get the Client that connects this Sender to us
