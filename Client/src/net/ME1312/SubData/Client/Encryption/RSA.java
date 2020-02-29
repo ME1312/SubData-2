@@ -2,7 +2,7 @@ package net.ME1312.SubData.Client.Encryption;
 
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
-import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.CipherFactory;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;

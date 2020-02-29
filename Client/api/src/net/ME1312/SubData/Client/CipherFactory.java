@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Client;
 
-import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.NamedContainer;
 
 /**
  * Cipher Factory Layout Class

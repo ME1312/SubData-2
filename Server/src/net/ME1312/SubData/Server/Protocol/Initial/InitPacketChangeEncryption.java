@@ -1,7 +1,7 @@
 package net.ME1312.SubData.Server.Protocol.Initial;
 
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.*;
 import net.ME1312.SubData.Server.Library.ConnectionState;

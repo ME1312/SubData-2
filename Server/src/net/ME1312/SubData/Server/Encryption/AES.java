@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Encryption;
 
-import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 
 import javax.crypto.*;

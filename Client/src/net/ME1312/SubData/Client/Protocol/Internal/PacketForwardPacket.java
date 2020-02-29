@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Container;
+import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Library.ForwardedDataSender;
 import net.ME1312.SubData.Client.Protocol.PacketOut;

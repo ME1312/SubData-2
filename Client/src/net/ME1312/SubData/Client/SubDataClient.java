@@ -2,9 +2,9 @@ package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
-import net.ME1312.Galaxi.Library.Container;
+import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.*;

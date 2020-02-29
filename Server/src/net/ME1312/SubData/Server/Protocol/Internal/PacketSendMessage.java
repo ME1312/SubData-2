@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.DataProtocol;
 import net.ME1312.SubData.Server.DataServer;
