@@ -36,7 +36,7 @@ public final class AES implements net.ME1312.SubData.Server.Cipher {
     private static final String CIPHER_SPEC = "AES/CBC/PKCS5Padding";
 
     // Key derivation specification
-    private static final String KEYGEN_SPEC = "PBKDF2WithHmacSHA1";
+    private static final String KEYGEN_SPEC = "PBKDF2WithHmacSHA256";
     private static final int SALT_LENGTH = 16; // in bytes
     private static final int AUTH_KEY_LENGTH = 8; // in bytes
     private static final int ITERATIONS = 32768;
