@@ -68,7 +68,7 @@ public class DHE implements Cipher, CipherFactory {
             KeyPairGenerator kpg;
             try {
                 kpg = KeyPairGenerator.getInstance("EC");
-                kpg.initialize(keyLength);
+                kpg.initialize(keyLength * 2);
                 KeyPair kp = kpg.generateKeyPair();
                 key = kp.getPublic();
                 agreement = KeyAgreement.getInstance("ECDH");

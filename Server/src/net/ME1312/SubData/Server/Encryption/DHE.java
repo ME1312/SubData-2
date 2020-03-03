@@ -68,14 +68,14 @@ public class DHE implements Cipher, CipherFactory {
         private PublicKey key;
         private KeyAgreement agreement;
         private ByteArrayOutputStream data;
-        private boolean sent, sentinit, received;
+        private boolean sent, initSent, received;
         private Cipher next;
 
         private Data() throws EncryptionException {
             KeyPairGenerator kpg;
             try {
                 kpg = KeyPairGenerator.getInstance("EC");
-                kpg.initialize(keyLength);
+                kpg.initialize(keyLength * 2);
                 KeyPair kp = kpg.generateKeyPair();
                 key = kp.getPublic();
                 agreement = KeyAgreement.getInstance("ECDH");
@@ -172,8 +172,8 @@ public class DHE implements Cipher, CipherFactory {
 
         if (data.received) {
 
-            if (!data.sentinit) {
-                data.sentinit = true;
+            if (!data.initSent) {
+                data.initSent = true;
                 EscapedOutputStream stream = Util.reflect(SubDataClient.class.getDeclaredField("out"), client);
                 stream.control('\u0018');
                 stream.flush();
