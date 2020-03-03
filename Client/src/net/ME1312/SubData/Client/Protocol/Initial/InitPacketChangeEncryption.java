@@ -37,6 +37,7 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
             }
 
             if (next != null) {
+                if (next != last) last.retire(sender.getConnection());
                 Util.reflect(SubDataClient.class.getDeclaredField("cipher"), sender.getConnection(), next);
                 Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection(), Util.<Integer>reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection()) + 1);
 

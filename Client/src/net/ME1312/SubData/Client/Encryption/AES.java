@@ -1,6 +1,7 @@
 package net.ME1312.SubData.Client.Encryption;
 
 import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.SubData.Client.DataClient;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
 
 import javax.crypto.*;
@@ -198,7 +199,7 @@ public final class AES implements net.ME1312.SubData.Client.Cipher {
     }
 
     @Override
-    public void encrypt(InputStream in, OutputStream out) throws Exception {
+    public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         encrypt(keyLength, key, in, out);
     }
 
@@ -281,7 +282,7 @@ public final class AES implements net.ME1312.SubData.Client.Cipher {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void decrypt(InputStream in, OutputStream out) throws Exception {
+    public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         decrypt(key, in, out);
     }
 

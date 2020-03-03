@@ -1,6 +1,7 @@
 package net.ME1312.SubData.Client.Encryption;
 
 import net.ME1312.SubData.Client.Cipher;
+import net.ME1312.SubData.Client.DataClient;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,13 +29,13 @@ public final class NEH implements Cipher {
     }
 
     @Override
-    public void encrypt(InputStream in, OutputStream out) throws Exception {
+    public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         int b;
         while((b = in.read()) != -1) out.write(b);
     }
 
     @Override
-    public void decrypt(InputStream in, OutputStream out) throws Exception {
+    public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         int b;
         while((b = in.read()) != -1) out.write(b);
     }

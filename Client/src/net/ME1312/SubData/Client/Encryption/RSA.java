@@ -5,8 +5,8 @@ import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
 import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.CipherFactory;
+import net.ME1312.SubData.Client.DataClient;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
-import net.ME1312.SubData.Client.Library.Exception.EndOfStreamException;
 
 import javax.crypto.Cipher;
 import java.io.*;
@@ -101,7 +101,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
     }
 
     @Override
-    public void encrypt(InputStream in, OutputStream out) throws Exception {
+    public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         try {
             // initialize RSA encryption
             Cipher ci = Cipher.getInstance(CIPHER_SPEC);
@@ -124,7 +124,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
     }
 
     @Override
-    public void decrypt(InputStream in, OutputStream out) throws Exception {
+    public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         try {
             // initialize RSA encryption
             Cipher ci = Cipher.getInstance(CIPHER_SPEC);

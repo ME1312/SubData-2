@@ -225,7 +225,7 @@ public class SubDataClient extends DataClient {
                 new Thread(() -> read(reset, data), "SubDataServer::Packet_Listener(" + address.toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
-                cipher.decrypt(raw, forward);
+                cipher.decrypt(this, raw, forward);
                 forward.close();
 
             } catch (Exception e) {
@@ -330,7 +330,7 @@ public class SubDataClient extends DataClient {
                                 };
 
                                 // Step 4 // Encrypt the Data
-                                cipher.encrypt(forward, raw);
+                                cipher.encrypt(this, forward, raw);
                                 raw.close();
                                 forward.close();
                             } else {
@@ -510,6 +510,7 @@ public class SubDataClient extends DataClient {
             if (reason != CLOSE_REQUESTED) {
                 subdata.log.warning(getAddress().toString() + " has disconnected: " + reason);
             } else subdata.log.info(getAddress().toString() + " has disconnected");
+            cipher.retire(this);
 
             if (!socket.isClosed()) getSocket().close();
             if (handler != null) {

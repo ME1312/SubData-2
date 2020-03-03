@@ -227,7 +227,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
 
                 // Step 2 // Decrypt the Data
-                cipher.decrypt(raw, forward);
+                cipher.decrypt(this, raw, forward);
                 forward.close();
 
             } catch (Exception e) {
@@ -332,7 +332,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                                 };
 
                                 // Step 4 // Encrypt the Data
-                                cipher.encrypt(forward, raw);
+                                cipher.encrypt(this, forward, raw);
                                 raw.close();
                                 forward.close();
                             } else {
@@ -577,6 +577,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             } else log.info("Disconnected from " + socket.getRemoteSocketAddress());
 
             socket.close();
+            cipher.retire(this);
 
             final DisconnectReason freason = reason;
             scheduler.run(() -> {

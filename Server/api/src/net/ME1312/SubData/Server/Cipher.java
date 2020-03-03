@@ -17,16 +17,25 @@ public interface Cipher {
     /**
      * Encrypt Data
      *
+     * @param client Client
      * @param in Decrypted Data
      * @param out Encrypted Data
      */
-    void encrypt(InputStream in, OutputStream out) throws Exception;
+    void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception;
 
     /**
      * Decrypt Data
      *
+     * @param client Client
      * @param in Encrypted Data
      * @param out Decrypted Data
      */
-    void decrypt(InputStream in, OutputStream out) throws Exception;
+    void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception;
+
+    /**
+     * Retire this encryption method for a specified Client
+     *
+     * @param client Client
+     */
+    default void retire(DataClient client) {}
 }
