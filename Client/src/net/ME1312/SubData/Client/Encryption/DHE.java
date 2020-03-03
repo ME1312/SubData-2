@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.*;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 
@@ -51,6 +52,7 @@ public class DHE implements Cipher, CipherFactory {
      * @return DHE
      */
     public static DHE get(int keyLength) {
+        if (keyLength != 128 && keyLength != 192 && keyLength != 256) throw new IllegalArgumentException(Integer.toString(keyLength));
         if (!instances.keySet().contains(keyLength)) instances.put(keyLength, new DHE(keyLength));
         return instances.get(keyLength);
     }
@@ -68,7 +70,15 @@ public class DHE implements Cipher, CipherFactory {
             KeyPairGenerator kpg;
             try {
                 kpg = KeyPairGenerator.getInstance("EC");
-                kpg.initialize(keyLength * 2);
+                ECGenParameterSpec spec;
+                if (keyLength >= 256) {
+                    spec = new ECGenParameterSpec("secp521r1");
+                } else if (keyLength >= 192) {
+                    spec = new ECGenParameterSpec("secp384r1");
+                } else {
+                    spec = new ECGenParameterSpec("secp256r1");
+                }
+                kpg.initialize(spec);
                 KeyPair kp = kpg.generateKeyPair();
                 key = kp.getPublic();
                 agreement = KeyAgreement.getInstance("ECDH");
@@ -87,11 +97,13 @@ public class DHE implements Cipher, CipherFactory {
                 byte[] ba = agreement.generateSecret();
                 ByteBuffer buf = ByteBuffer.wrap(ba);
                 int i = ba.length;
-                while (i > 3) {
-                    builder.append((char) buf.getInt());
-                    i -= 4;
+                while (i > 1) {
+                    builder.append(buf.getChar());
+                    i -= 2; // char uses 16 bits (2 bytes)
                 }
-                next = new AES(keyLength, builder.toString());
+
+                String key = builder.toString();
+                next = new AES(keyLength, key);
             } catch (Throwable e) {
                 throw new EncryptionException(e);
             }

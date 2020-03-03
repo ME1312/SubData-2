@@ -2,12 +2,13 @@ package net.ME1312.SubData.Server.Encryption;
 
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
+import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.CipherFactory;
 import net.ME1312.SubData.Server.DataClient;
+import net.ME1312.SubData.Server.Library.EscapedOutputStream;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
-import net.ME1312.SubData.Server.Library.Exception.EndOfStreamException;
 
 import javax.crypto.Cipher;
 import java.io.*;
@@ -103,6 +104,49 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
 
     @Override
     public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
+        EscapedOutputStream stream = new EscapedOutputStream(out, '\u0010', '\u000F');
+        Container<Boolean> reset = new Container<>(false);
+        while (!reset.get()) {
+            Container<Boolean> wrote = new Container<>(false);
+            encrypt(new InputStream() {
+                boolean open = true;
+                int bc = 1;
+
+                private int next() throws IOException {
+                    if (bc > BUFFER_SIZE) {
+                        return -1;
+                    } else {
+                        int b = in.read();
+                        if (b == -1) reset.set(true);
+                        else wrote.set(true);
+                        return b;
+                    }
+                }
+
+                @Override
+                public int read() throws IOException {
+                    if (open) {
+                        int b = next();
+                        if (b <= -1) close();
+                        else ++bc;
+                        return b;
+                    } else return -1;
+                }
+
+                @Override
+                public void close() throws IOException {
+                    if (open) {
+                        open = false;
+                    }
+                }
+            }, stream);
+            if (wrote.get()) {
+                stream.control('\u000F');
+                stream.flush();
+            }
+        }
+    }
+    private void encrypt(InputStream in, OutputStream out) throws Exception {
         try {
             // initialize RSA encryption
             Cipher ci = Cipher.getInstance(CIPHER_SPEC);
@@ -124,8 +168,59 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
         }
     }
 
+
     @Override
     public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
+        Container<Boolean> reset = new Container<>(false);
+        while (!reset.get()) {
+            decrypt(new InputStream() {
+                boolean open = true;
+                Integer pending = null;
+
+                private int next() throws IOException {
+                    int b = (pending != null)?pending:in.read();
+                    pending = null;
+
+                    switch (b) {
+                        case -1:
+                            reset.set(true);
+                        case '\u0010':
+                            int next = in.read();
+                            switch (next) {
+                                case '\u0010': // [DLE] (Escape character)
+                                    /* no action necessary */
+                                    break;
+                                case '\u000F': //  [SI] (End of Frame character)
+                                    b = -1;
+                                    break;
+                                default:
+                                    pending = next;
+                                    break;
+                            }
+                            break;
+                    }
+                    return b;
+                }
+
+                @Override
+                public int read() throws IOException {
+                    if (open) {
+                        int b = next();
+                        if (b <= -1) close();
+                        return b;
+                    } else return -1;
+                }
+
+                @Override
+                public void close() throws IOException {
+                    if (open) {
+                        open = false;
+                    }
+                }
+            }, out);
+        }
+    }
+    private void decrypt(InputStream in, OutputStream out) throws Exception {
         try {
             // initialize RSA encryption
             Cipher ci = Cipher.getInstance(CIPHER_SPEC);
@@ -133,13 +228,17 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
 
             // read data from input into buffer, decrypt and write to output
             byte[] ibuf = new byte[BUFFER_SIZE];
+            boolean wrote = false;
             int len;
             while ((len = in.read(ibuf)) != -1) {
                 byte[] obuf = ci.update(ibuf, 0, len);
                 if (obuf != null) out.write(obuf);
+                wrote = true;
             }
-            byte[] obuf = ci.doFinal();
-            if (obuf != null) out.write(obuf);
+            if (wrote) {
+                byte[] obuf = ci.doFinal();
+                if (obuf != null) out.write(obuf);
+            }
         } catch (SocketException e) {
             throw e;
         } catch (Throwable e) {

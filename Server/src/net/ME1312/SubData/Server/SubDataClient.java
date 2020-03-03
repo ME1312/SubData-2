@@ -166,7 +166,7 @@ public class SubDataClient extends DataClient {
                     boolean finished = false;
                     Integer pending = null;
 
-                    private int next() throws IOException { // TODO
+                    private int next() throws IOException {
                         int b = (pending != null)?pending:in.read();
                         pending = null;
 

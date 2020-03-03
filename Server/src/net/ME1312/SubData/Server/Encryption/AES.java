@@ -56,6 +56,7 @@ public final class AES implements net.ME1312.SubData.Server.Cipher {
      * @param key Password
      */
     public AES(int keyLength, String key) {
+        if (keyLength != 128 && keyLength != 192 && keyLength != 256) throw new IllegalArgumentException(Integer.toString(keyLength));
         this.keyLength = keyLength;
         this.key = key;
     }
@@ -68,10 +69,10 @@ public final class AES implements net.ME1312.SubData.Server.Cipher {
     static NamedContainer<net.ME1312.SubData.Server.Cipher, String> random(int keyLength) {
         StringBuilder builder = new StringBuilder();
         SecureRandom random = new SecureRandom();
-        int i = random.nextInt(keyLength - (keyLength / 4) + 1) + ((keyLength / 4) * 3);
-        while (i > 1) {
+        int i = random.nextInt(keyLength + 1) + keyLength;
+        while (i > 0) {
             builder.append((char) random.nextInt(Character.MAX_VALUE + 1));
-            i -= 2;
+            i -= 16 / 2; // char uses 16 bytes
         }
 
         String key = builder.toString();
