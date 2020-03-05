@@ -120,7 +120,7 @@ public class DHE implements Cipher, CipherFactory {
 
         if (!data.sent) {
             try {
-                EscapedOutputStream stream = new EscapedOutputStream(out, '\u0010', '\u000E', '\u000F');
+                EscapedOutputStream stream = new EscapedOutputStream(out, '\u001B', '\u000E', '\u000F');
                 stream.control('\u000E');
                 stream.write(data.key.getEncoded());
                 stream.control('\u000F');
@@ -150,8 +150,8 @@ public class DHE implements Cipher, CipherFactory {
         while (!data.received && (b = in.read()) != -1) {
             if (escaped) {
                 switch (b) {
-                    case '\u0010': // [DLE] (Escape character)
-                        if (receiving) data.data.write('\u0010');
+                    case '\u001B': // [ESC] (Escape character)
+                        if (receiving) data.data.write('\u001B');
                         break;
                     case '\u000E': //  [SO] (L2 Handshake Begin character)
                         data.data = new ByteArrayOutputStream();
@@ -162,13 +162,13 @@ public class DHE implements Cipher, CipherFactory {
                         break;
                     default:
                         if (receiving) {
-                            data.data.write('\u0010');
+                            data.data.write('\u001B');
                             data.data.write(b);
                         }
                         break;
                 }
                 escaped = false;
-            } else if (b == '\u0010') {
+            } else if (b == '\u001B') {
                 escaped = true;
             } else if (receiving) {
                 data.data.write(b);

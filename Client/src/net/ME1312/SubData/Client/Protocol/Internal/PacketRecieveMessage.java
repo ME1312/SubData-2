@@ -32,8 +32,8 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
         while (state < 3 && (b = data.read()) != -1) {
             if (escaped) {
                 switch (b) {
-                    case '\u0010': // [DLE] (Escape character)
-                        pending.write('\u0010');
+                    case '\u001B': // [ESC] (Escape character)
+                        pending.write('\u001B');
                         break;
                     case '\u0003': // [ETX] (End of String character)
                         switch (state) {
@@ -51,12 +51,12 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
                         state++;
                         break;
                     default:
-                        pending.write('\u0010');
+                        pending.write('\u001B');
                         pending.write(b);
                         break;
                 }
                 escaped = false;
-            } else if (b == '\u0010') {
+            } else if (b == '\u001B') {
                 escaped = true;
             } else {
                 pending.write(b);

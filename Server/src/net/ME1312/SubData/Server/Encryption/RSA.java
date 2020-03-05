@@ -104,7 +104,7 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
 
     @Override
     public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
-        EscapedOutputStream stream = new EscapedOutputStream(out, '\u0010', '\u000F');
+        EscapedOutputStream stream = new EscapedOutputStream(out, '\u001B', '\u0017');
         Container<Boolean> reset = new Container<>(false);
         while (!reset.get()) {
             Container<Boolean> wrote = new Container<>(false);
@@ -141,7 +141,7 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
                 }
             }, stream);
             if (wrote.get()) {
-                stream.control('\u000F');
+                stream.control('\u0017');
                 stream.flush();
             }
         }
@@ -184,13 +184,13 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
                     switch (b) {
                         case -1:
                             reset.set(true);
-                        case '\u0010':
+                        case '\u001B':
                             int next = in.read();
                             switch (next) {
-                                case '\u0010': // [DLE] (Escape character)
+                                case '\u001B': // [ESC] (Escape character)
                                     /* no action necessary */
                                     break;
-                                case '\u000F': //  [SI] (End of Frame character)
+                                case '\u0017': // [ETB] (End of Frame character)
                                     b = -1;
                                     break;
                                 default:

@@ -37,7 +37,7 @@ public class PacketSendMessage implements Forwardable, PacketStreamOut {
         if (!mOut.keySet().contains(message.getClass())) throw new IllegalMessageException("Could not find handle for message: " + message.getClass().getCanonicalName());
         if (message.version() == null || message.version().toString().length() == 0) throw new IllegalMessageException("Cannot send message with null version: " + message.getClass().getCanonicalName());
 
-        EscapedOutputStream out = new EscapedOutputStream(data, '\u0010', '\u0003');
+        EscapedOutputStream out = new EscapedOutputStream(data, '\u001B', '\u0003');
         out.write(mOut.get(message.getClass()).name().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
         out.write(mOut.get(message.getClass()).get().getBytes(StandardCharsets.UTF_8));
