@@ -100,7 +100,7 @@ public class SubDataProtocol extends DataProtocol {
      * @throws IOException
      */
     public SubDataClient open(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
-        return open(Runnable::run, logger, address, port, null);
+        return open(scheduler, logger, address, port, null);
     }
 
     /**
