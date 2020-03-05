@@ -42,7 +42,9 @@ public class SubDataClient extends DataClient {
     private SubDataServer subdata;
     private SubDataClient next;
     private ConnectionState state;
+    private DisconnectReason isdcr;
     private Timer timeout;
+    private Object asr;
 
     SubDataClient(SubDataServer subdata, Socket client) throws IOException {
         if (Util.isNull(subdata, client)) throw new NullPointerException();
@@ -53,6 +55,7 @@ public class SubDataClient extends DataClient {
         queue = null;
         statequeue = new HashMap<>();
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
+        isdcr = PROTOCOL_MISMATCH;
         timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
         timeout.schedule(new TimerTask() {
             @Override
@@ -429,6 +432,10 @@ public class SubDataClient extends DataClient {
         return address;
     }
 
+    public Object getAuthResponse() {
+        return asr;
+    }
+
     public ClientHandler getHandler() {
         return handler;
     }
@@ -506,6 +513,7 @@ public class SubDataClient extends DataClient {
     void close(DisconnectReason reason) throws IOException {
         if (state != CLOSED) {
             if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
+            if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
             state = CLOSED;
             if (reason != CLOSE_REQUESTED) {
                 subdata.log.warning(getAddress().toString() + " has disconnected: " + reason);

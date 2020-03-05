@@ -28,6 +28,7 @@ public final class InitPacketPostDeclaration implements InitialProtocol.Packet, 
         Version version = data.getVersion(0x0002);
 
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == ConnectionState.INITIALIZATION) {
+            Util.reflect(SubDataClient.class.getDeclaredField("isdcr"), sender.getConnection(), DisconnectReason.PROTOCOL_MISMATCH);
             if (new Container<>(sender.getProtocol().getName()).equals(new Container<>(name))) {
                 List<Version> versions = Arrays.asList(sender.getProtocol().getVersion());
                 if (versions.contains(version)) {

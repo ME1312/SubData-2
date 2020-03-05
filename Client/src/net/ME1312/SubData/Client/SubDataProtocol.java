@@ -2,6 +2,7 @@ package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.Encryption.NEH;
@@ -67,11 +68,26 @@ public class SubDataProtocol extends DataProtocol {
      * @param logger Network Logger
      * @param address Bind Address (or null for all)
      * @param port Port Number
+     * @param login Login Data
      * @see SubDataClient#openChannel()
      * @throws IOException
      */
-    protected SubDataClient sub(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
-        return open(scheduler, logger, address, port);
+    protected SubDataClient sub(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
+        return open(scheduler, logger, address, port, login);
+    }
+
+    /**
+     * Launch a SubData Client Instance
+     *
+     * @param scheduler Event Scheduler
+     * @param logger Network Logger
+     * @param address Bind Address (or null for all)
+     * @param port Port Number
+     * @param login Login Data
+     * @throws IOException
+     */
+    public SubDataClient open(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
+        return new SubDataClient(this, scheduler, logger, address, port, login);
     }
 
     /**
@@ -84,7 +100,20 @@ public class SubDataProtocol extends DataProtocol {
      * @throws IOException
      */
     public SubDataClient open(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
-        return new SubDataClient(this, scheduler, logger, address, port);
+        return open(Runnable::run, logger, address, port, null);
+    }
+
+    /**
+     * Launch a SubData Client Instance
+     *
+     * @param logger Network Logger
+     * @param address Bind Address (or null for all)
+     * @param port Port Number
+     * @param login Login Data
+     * @throws IOException
+     */
+    public SubDataClient open(Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
+        return open(Runnable::run, logger, address, port, login);
     }
 
     /**

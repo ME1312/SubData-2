@@ -24,6 +24,7 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
         String key =       (data.contains(0x0001))?data.getRawString(0x0001):null;
 
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == ConnectionState.INITIALIZATION) {
+            Util.reflect(SubDataClient.class.getDeclaredField("isdcr"), sender.getConnection(), DisconnectReason.ENCRYPTION_MISMATCH);
             Cipher last = Util.reflect(SubDataClient.class.getDeclaredField("cipher"), sender.getConnection());
             Cipher next;
             int i = Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection());

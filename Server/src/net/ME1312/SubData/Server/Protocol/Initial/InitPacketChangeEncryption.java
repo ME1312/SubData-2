@@ -22,6 +22,7 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
     @Override
     public ObjectMap<Integer> send(SubDataClient client) throws Throwable {
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == ConnectionState.INITIALIZATION) {
+            Util.reflect(SubDataClient.class.getDeclaredField("isdcr"), client, DisconnectReason.ENCRYPTION_MISMATCH);
             ObjectMap<Integer> data = new ObjectMap<Integer>();
 
             String cipher = Util.reflect(SubDataServer.class.getDeclaredField("cipher"), client.getServer());

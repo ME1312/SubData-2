@@ -25,6 +25,12 @@ public enum DisconnectReason {
     ENCRYPTION_MISMATCH,
 
     /**
+     * SubData disconnected because the AuthService determined the client's login credentials to be invalid
+     * @see net.ME1312.SubData.Server.AuthService
+     */
+    INVALID_LOGIN,
+
+    /**
      * SubData disconnected because an unhandled exception occurred
      */
     UNHANDLED_EXCEPTION,

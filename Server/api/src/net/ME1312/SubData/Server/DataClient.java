@@ -99,6 +99,13 @@ public abstract class DataClient {
     public abstract InetSocketAddress getAddress();
 
     /**
+     * Gets the response from the Authorization Service
+     *
+     * @return Authorization Service Response
+     */
+    public abstract Object getAuthResponse();
+
+    /**
      * Gets the Linked Handler
      *
      * @return Handler

@@ -30,6 +30,7 @@ public class SubDataProtocol extends DataProtocol {
     int MAX_QUEUE = 64;
     Version version;
     String name;
+    AuthService<?> as;
 
     /**
      * Create a new Protocol
@@ -112,6 +113,25 @@ public class SubDataProtocol extends DataProtocol {
 
     public Version getVersion() {
         return (version != null)?version:new Version(0);
+    }
+
+    /**
+     * Set the Network Protocol Authorization Service (may only be called once)
+     *
+     * @param service Protocol Authorization Service
+     */
+    public void setAuthService(AuthService<?> service) {
+        if (this.as != null) throw new IllegalStateException("Protocol auth service already set");
+        this.as = service;
+    }
+
+    /**
+     * Get the Network Protocol Authorization Service
+     *
+     * @return Protocol Authorization Service
+     */
+    public AuthService<?> getAuthService() {
+        return as;
     }
 
     /**

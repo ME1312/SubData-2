@@ -39,18 +39,22 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private SubDataProtocol protocol;
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
+    private ObjectMap<?> login;
     private ConnectionState state;
+    private DisconnectReason isdcr;
     private Callback<Runnable> scheduler;
     private Object[] constructor;
     private SubDataClient next;
     private Logger log;
 
-    SubDataClient(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port) throws IOException {
+    SubDataClient(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port, ObjectMap<?> login) throws IOException {
         if (Util.isNull(address, port)) throw new NullPointerException();
         this.protocol = protocol;
+        this.login = login;
         this.scheduler = scheduler;
         this.log = log;
         this.state = PRE_INITIALIZATION;
+        this.isdcr = PROTOCOL_MISMATCH;
         this.socket = new Socket(address, port);
         this.out = new EscapedOutputStream(socket.getOutputStream(), '\u0010', '\u0018', '\u0017');
         this.queue = null;
@@ -59,7 +63,8 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 scheduler,
                 log,
                 address,
-                port
+                port,
+                login
         };
 
         log.info("Connected to " + socket.getRemoteSocketAddress());
@@ -519,7 +524,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     @SuppressWarnings("unchecked")
     @Override
     public SubDataClient openChannel() throws IOException {
-        return protocol.sub((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3]);
+        return protocol.sub((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3], (ObjectMap<?>) constructor[4]);
     }
 
     /**
@@ -571,6 +576,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     void close(DisconnectReason reason) throws IOException {
         if (state != CLOSED && !socket.isClosed()) {
             if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
+            if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
             state = CLOSED;
             if (reason != CLOSE_REQUESTED) {
                 log.warning("Disconnected from " + socket.getRemoteSocketAddress() + ": " + reason);
