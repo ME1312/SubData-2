@@ -7,6 +7,7 @@ import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.*;
 import net.ME1312.SubData.Client.Library.EscapedOutputStream;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
+import net.ME1312.SubData.Client.Library.OutputStreamL1;
 
 import javax.crypto.KeyAgreement;
 import java.io.ByteArrayOutputStream;
@@ -124,6 +125,7 @@ public class DHE implements Cipher, CipherFactory {
                 stream.control('\u000E');
                 stream.write(data.key.getEncoded());
                 stream.control('\u000F');
+                Util.<OutputStreamL1>reflect(SubDataClient.class.getDeclaredField("out"), client).flush();
                 data.sent = true;
             } catch (Throwable e) {
                 throw new EncryptionException(e);

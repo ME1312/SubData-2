@@ -3,10 +3,7 @@ package net.ME1312.SubData.Client.Protocol.Initial;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.*;
-import net.ME1312.SubData.Client.Library.ConnectionState;
-import net.ME1312.SubData.Client.Library.DebugUtil;
-import net.ME1312.SubData.Client.Library.DisconnectReason;
-import net.ME1312.SubData.Client.Library.EscapedOutputStream;
+import net.ME1312.SubData.Client.Library.*;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
@@ -42,7 +39,7 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
                 Util.reflect(SubDataClient.class.getDeclaredField("cipher"), sender.getConnection(), next);
                 Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection(), Util.<Integer>reflect(SubDataClient.class.getDeclaredField("cipherlevel"), sender.getConnection()) + 1);
 
-                EscapedOutputStream out = Util.reflect(SubDataClient.class.getDeclaredField("out"), sender.getConnection());
+                OutputStreamL1 out = Util.reflect(SubDataClient.class.getDeclaredField("out"), sender.getConnection());
                 out.control('\u0018');
                 out.flush();
                 sender.sendPacket(this);

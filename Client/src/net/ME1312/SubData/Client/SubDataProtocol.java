@@ -1,11 +1,12 @@
 package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
+import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.Encryption.NEH;
+import net.ME1312.SubData.Client.Library.DataSize;
 import net.ME1312.SubData.Client.Library.DebugUtil;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketVerifyState;
 import net.ME1312.SubData.Client.Protocol.Internal.*;
@@ -32,6 +33,7 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
     ArrayList<Version> version = new ArrayList<Version>();
     String name;
+    Container<Long> bs = new Container<>((long) DataSize.MB);
 
     /**
      * Create a new Protocol
@@ -168,6 +170,24 @@ public class SubDataProtocol extends DataProtocol {
         } else {
             return version.toArray(new Version[0]);
         }
+    }
+
+    /**
+     * Get SubData's Block Size
+     *
+     * @return Block Size
+     */
+    public long getBlockSize() {
+        return bs.get();
+    }
+
+    /**
+     * Set SubData's Block Size
+     *
+     * @param size Block Size
+     */
+    public void setBlockSize(long size) {
+        bs.set(size);
     }
 
     /**

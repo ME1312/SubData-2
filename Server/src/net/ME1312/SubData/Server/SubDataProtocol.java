@@ -1,9 +1,11 @@
 package net.ME1312.SubData.Server;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
+import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Server.Encryption.NEH;
+import net.ME1312.SubData.Server.Library.DataSize;
 import net.ME1312.SubData.Server.Library.DebugUtil;
 import net.ME1312.SubData.Server.Protocol.Initial.InitPacketVerifyState;
 import net.ME1312.SubData.Server.Protocol.Internal.*;
@@ -30,6 +32,7 @@ public class SubDataProtocol extends DataProtocol {
     int MAX_QUEUE = 64;
     Version version;
     String name;
+    Container<Long> bs = new Container<>((long) DataSize.MB);
     AuthService<?> as;
 
     /**
@@ -152,6 +155,24 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void unregisterCipher(String handle) {
         if (!handle.equalsIgnoreCase("NULL")) ciphers.remove(handle.toUpperCase());
+    }
+
+    /**
+     * Get SubData's Block Size
+     *
+     * @return Block Size
+     */
+    public long getBlockSize() {
+        return bs.get();
+    }
+
+    /**
+     * Set SubData's Block Size
+     *
+     * @param size Block Size
+     */
+    public void setBlockSize(long size) {
+        bs.set(size);
     }
 
     /**

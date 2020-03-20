@@ -28,6 +28,11 @@ public class EscapedOutputStream extends OutputStream {
         this.controls = controls;
     }
 
+    private boolean check(int b) {
+        for (int c : controls) if (b == c) return true;
+        return false;
+    }
+
     /**
      * Write data to the stream
      *
@@ -37,7 +42,7 @@ public class EscapedOutputStream extends OutputStream {
     @Override
     public void write(int b) throws IOException {
         if (escaped) {
-            if (b == escape || Arrays.binarySearch(controls, b) >= 0) {
+            if (b == escape || check(b)) {
                 out.write(escape);
             }
             escaped = false;
@@ -55,7 +60,7 @@ public class EscapedOutputStream extends OutputStream {
      * @throws IOException
      */
     public void control(int b) throws IOException {
-        if (Arrays.binarySearch(controls, b) < 0)
+        if (!check(b))
             throw new IllegalArgumentException("Character " + DebugUtil.toHex(0xFFFF, b) + " is not a control character");
 
         if (escaped) {

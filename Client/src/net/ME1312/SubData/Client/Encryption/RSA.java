@@ -189,7 +189,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
                             case '\u001B': // [ESC] (Escape character)
                                 /* no action necessary */
                                 break;
-                            case '\u0017': // [ETB] (End of Frame character)
+                            case '\u0017': // [ETB] (End of Block character)
                                 b = -1;
                                 break;
                             default:

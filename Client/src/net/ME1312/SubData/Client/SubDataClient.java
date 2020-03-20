@@ -3,6 +3,7 @@ package net.ME1312.SubData.Client;
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container.Container;
+import net.ME1312.Galaxi.Library.Container.PrimitiveContainer;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Container.NamedContainer;
 import net.ME1312.Galaxi.Library.Util;
@@ -35,7 +36,9 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private Socket socket;
     private LinkedList<PacketOut> queue;
     private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
-    private EscapedOutputStream out;
+    private BufferedInputStream in;
+    private OutputStreamL1 out;
+    private Container<Long> bs;
     private SubDataProtocol protocol;
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
@@ -50,13 +53,15 @@ public class SubDataClient extends DataClient implements SubDataSender {
     SubDataClient(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port, ObjectMap<?> login) throws IOException {
         if (Util.isNull(address, port)) throw new NullPointerException();
         this.protocol = protocol;
+        this.bs = protocol.bs;
         this.login = login;
         this.scheduler = scheduler;
         this.log = log;
         this.state = PRE_INITIALIZATION;
         this.isdcr = PROTOCOL_MISMATCH;
         this.socket = new Socket(address, port);
-        this.out = new EscapedOutputStream(socket.getOutputStream(), '\u0010', '\u0018', '\u0017');
+        this.in = new BufferedInputStream(socket.getInputStream(), (bs.get() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.get().intValue());
+        this.out = new OutputStreamL1(log, socket.getOutputStream(), bs.get());
         this.queue = null;
         this.statequeue = new HashMap<>();
         this.constructor = new Object[]{
@@ -71,8 +76,9 @@ public class SubDataClient extends DataClient implements SubDataSender {
         read();
     }
 
-    private void read(SubDataSender sender, Container<Boolean> reset, InputStream data) {
+    private void read(SubDataSender sender, PrimitiveContainer<Boolean> reset, InputStream stream) {
         try {
+            BufferedInputStream data = new BufferedInputStream(stream, (bs.get() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.get().intValue());
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
             int id = -1, version = -1;
 
@@ -94,11 +100,11 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
             // Step 4 // Create a detached data forwarding InputStream
             if (state != CLOSED && id >= 0 && version >= 0) {
-                Container<Boolean> open = new Container<>(true);
+                PrimitiveContainer<Boolean> open = new PrimitiveContainer<>(true);
                 InputStream forward = new InputStream() {
                     @Override
                     public int read() throws IOException {
-                        if (open.get()) {
+                        if (open.value) {
                             int b = data.read();
                             if (b < 0) close();
                             return b;
@@ -107,7 +113,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
                     @Override
                     public void close() throws IOException {
-                        open.set(false);
+                        open.value = false;
                         while (data.read() != -1);
                     }
                 };
@@ -146,12 +152,12 @@ public class SubDataClient extends DataClient implements SubDataSender {
                                     Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
                             }
                         });
-                        if (sender == this) while (open.get()) Thread.sleep(125);
+                        if (sender == this) while (open.value) Thread.sleep(125);
                     }
                 }
             }
         } catch (Exception e) {
-            if (!reset.get()) try {
+            if (!reset.value) try {
                 if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
                     DebugUtil.logException(e, log);
                 } if (!(e instanceof SocketException)) {
@@ -164,66 +170,16 @@ public class SubDataClient extends DataClient implements SubDataSender {
     }
     void read() {
         if (!socket.isClosed()) new Thread(() -> {
-            Container<Boolean> reset = new Container<>(false);
+            PrimitiveContainer<Boolean> reset = new PrimitiveContainer<>(false);
             try {
                 // Step 1 // Parse Escapes in the Encrypted Data
-                InputStream in = socket.getInputStream();
-                InputStream raw = new InputStream() {
-                    boolean open = true;
-                    boolean finished = false;
-                    Integer pending = null;
-
-                    private int next() throws IOException {
-                        int b = (pending != null)?pending:in.read();
-                        pending = null;
-
-                        switch (b) {
-                            case -1:
-                                throw new EndOfStreamException();
-                            case '\u0010':
-                                int next = in.read();
-                                switch (next) {
-                                    case '\u0010': // [DLE] (Escape character)
-                                        /* no action necessary */
-                                        break;
-                                    case '\u0018': // [CAN] (Read Reset character)
-                                        if (state != PRE_INITIALIZATION)
-                                            reset.set(true);
-                                    case '\u0017': // [ETB] (End of Packet character)
-                                        finished = true;
-                                        b = -1;
-                                        break;
-                                    default:
-                                        pending = next;
-                                        break;
-                                }
-                                break;
-                        }
-                        return b;
-                    }
-
-                    @Override
-                    public int read() throws IOException {
-                        if (open) {
-                            int b = next();
-                            if (b <= -1) close();
-                            return b;
-                        } else return -1;
-                    }
-
-                    @Override
-                    public void close() throws IOException {
-                        if (open) {
-                            open = false;
-                            if (!socket.isClosed()) {
-                                if (!finished) {
-                                    while (next() != -1);
-                                }
-                            }
-                            SubDataClient.this.read();
-                        }
-                    }
-                };
+                InputStream raw = new InputStreamL1(in, () -> {
+                    if (state != PRE_INITIALIZATION) reset.value = true;
+                }, () -> {
+                    if (!socket.isClosed()) {
+                        SubDataClient.this.read();
+                    } else Util.isException(() -> close(CONNECTION_INTERRUPTED));
+                });
 
                 PipedInputStream data = new PipedInputStream(1024);
                 PipedOutputStream forward = new PipedOutputStream(data);
@@ -236,7 +192,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 forward.close();
 
             } catch (Exception e) {
-                if (!reset.get()) try {
+                if (!reset.value) try {
                     if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
                         DebugUtil.logException(e, log);
                     } if (!(e instanceof SocketException)) {
@@ -254,16 +210,16 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private void write(SubDataSender sender, PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
         try {
-            Container<Boolean> open = new Container<>(true);
+            PrimitiveContainer<Boolean> open = new PrimitiveContainer<>(true);
             OutputStream forward = new OutputStream() {
                 @Override
                 public void write(int b) throws IOException {
-                    if (open.get()) data.write(b);
+                    if (open.value) data.write(b);
                 }
 
                 @Override
                 public void close() throws IOException {
-                    open.set(false);
+                    open.value = false;
                     Util.isException(data::close);
                 }
             };
@@ -289,7 +245,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     Util.isException(forward::close);
                 }
             });
-            if (sender == this) while (open.get()) Thread.sleep(125);
+            if (sender == this) while (open.value) Thread.sleep(125);
         } catch (Throwable e) {
             DebugUtil.logException(e, log);
             Util.isException(data::close);
@@ -315,10 +271,11 @@ public class SubDataClient extends DataClient implements SubDataSender {
                                     @Override
                                     public void write(int b) throws IOException {
                                         if (open) {
-                                            if (!socket.isClosed()) {
+                                            try {
                                                 out.write(b);
-                                                out.flush();
-                                            } else open = false;
+                                            } catch (Throwable e) {
+                                                close();
+                                            }
                                         }
                                     }
 
@@ -519,6 +476,26 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
     public InetSocketAddress getAddress() {
         return new InetSocketAddress(socket.getInetAddress(), socket.getPort());
+    }
+
+    /**
+     * Get SubData's Block Size
+     *
+     * @return Block Size
+     */
+    public long getBlockSize() {
+        return bs.get();
+    }
+
+    /**
+     * Set SubData's Block Size
+     *
+     * @param size Block Size (null for super)
+     */
+    public void setBlockSize(Long size) {
+        if (size == null) {
+            bs = protocol.bs;
+        } else bs = new Container<>(size);
     }
 
     @SuppressWarnings("unchecked")

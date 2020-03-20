@@ -30,13 +30,19 @@ public final class NEH implements Cipher {
 
     @Override
     public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
-        int b;
-        while((b = in.read()) != -1) out.write(b);
+        int i;
+        byte[] b = new byte[1024];
+        while ((i = in.read(b)) != -1) {
+            out.write(b, 0, i);
+        }
     }
 
     @Override
     public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
-        int b;
-        while((b = in.read()) != -1) out.write(b);
+        int i;
+        byte[] b = new byte[1024];
+        while ((i = in.read(b)) != -1) {
+            out.write(b, 0, i);
+        }
     }
 }
