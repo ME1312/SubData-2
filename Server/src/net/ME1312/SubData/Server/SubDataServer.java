@@ -25,6 +25,7 @@ public class SubDataServer extends DataServer {
     private ServerSocket server;
     private String address;
     SubDataProtocol protocol;
+    Container<Long> timeout;
     Callback<Runnable> scheduler;
     String cipher;
     Logger log;
@@ -41,6 +42,7 @@ public class SubDataServer extends DataServer {
             whitelist(address.getHostAddress());
         }
         this.protocol = protocol;
+        this.timeout = protocol.timeout;
         this.scheduler = scheduler;
         this.log = log;
 
@@ -86,6 +88,26 @@ public class SubDataServer extends DataServer {
 
     public SubDataProtocol getProtocol() {
         return protocol;
+    }
+
+    /**
+     * Get SubData's Initialization Timer
+     *
+     * @return Timeout Time
+     */
+    public long getTimeout() {
+        return timeout.get();
+    }
+
+    /**
+     * Get SubData's Initialization Timer
+     *
+     * @param size Timeout Time (null for super)
+     */
+    public void setTimeout(Long size) {
+        if (size == null) {
+            timeout = protocol.bs;
+        } else timeout = new Container<>(size);
     }
 
     /**

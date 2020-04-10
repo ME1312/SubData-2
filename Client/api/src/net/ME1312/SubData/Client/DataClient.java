@@ -76,7 +76,7 @@ public abstract class DataClient implements DataSender {
      *
      * @return Client Map
      */
-    public abstract void getClients(Callback<Map<UUID, ? extends ObjectMap<String>>> callback);
+    public abstract void getClients(Callback<Map<UUID, ObjectMap<String>>> callback);
 
     /**
      * Ping the Server
@@ -108,7 +108,7 @@ public abstract class DataClient implements DataSender {
      * @param messages Messages to send
      * @see net.ME1312.SubData.Client.Protocol.Forwardable Messages must be tagged as Forwardable
      */
-    public abstract <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut... messages);
+    public abstract void forwardMessage(UUID id, MessageOut... messages);
 
     /**
      * Get the Client that connects the Server to us

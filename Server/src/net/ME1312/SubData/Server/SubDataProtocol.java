@@ -32,6 +32,7 @@ public class SubDataProtocol extends DataProtocol {
     int MAX_QUEUE = 64;
     Version version;
     String name;
+    Container<Long> timeout = new Container<>(30000L);
     Container<Long> bs = new Container<>((long) DataSize.MB);
     AuthService<?> as;
 
@@ -173,6 +174,24 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void setBlockSize(long size) {
         bs.set(size);
+    }
+
+    /**
+     * Get SubData's Initialization Timer
+     *
+     * @return Timeout Time
+     */
+    public long getTimeout() {
+        return timeout.get();
+    }
+
+    /**
+     * Set SubData's Initialization Timer
+     *
+     * @param time Timeout Time
+     */
+    public void setTimeout(long time) {
+        timeout.set(time);
     }
 
     /**

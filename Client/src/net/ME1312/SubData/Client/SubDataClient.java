@@ -322,7 +322,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
      * @param packets Packets to send
      * @see ForwardOnly Packets must <b><u>NOT</u></b> be tagged as Forward-Only
      */
-    public void sendPacket(PacketOut... packets) {
+    public synchronized void sendPacket(PacketOut... packets) {
         List<PacketOut> list = new ArrayList<>();
 
         for (PacketOut packet : packets) {
@@ -365,7 +365,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
      * @param packets Packets to send
      * @see net.ME1312.SubData.Client.Protocol.Forwardable Packets must be tagged as Forwardable
      */
-    public <ForwardablePacketOut extends PacketOut & Forwardable> void forwardPacket(UUID id, ForwardablePacketOut... packets) {
+    public void forwardPacket(UUID id, PacketOut... packets) {
         List<PacketOut> list = new ArrayList<>();
         for (PacketOut packet : packets) {
             if (Util.isNull(id, packet)) throw new NullPointerException();
@@ -385,7 +385,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
         sendPacket(list.toArray(new PacketOut[0]));
     }
 
-    public <ForwardableMessageOut extends MessageOut & Forwardable> void forwardMessage(UUID id, ForwardableMessageOut... messages) {
+    public void forwardMessage(UUID id, MessageOut... messages) {
         if (Util.isNull(id)) throw new NullPointerException();
 
         List<PacketOut> list = new ArrayList<>();
@@ -418,7 +418,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     }
 
     @Override
-    public void getClients(Callback<Map<UUID, ? extends ObjectMap<String>>> callback) {
+    public void getClients(Callback<Map<UUID, ObjectMap<String>>> callback) {
         if (Util.isNull(callback)) throw new NullPointerException();
         StackTraceElement[] origin = new Exception().getStackTrace();
         sendPacket(new PacketDownloadClientList(data -> {

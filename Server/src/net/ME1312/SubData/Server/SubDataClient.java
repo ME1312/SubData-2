@@ -70,7 +70,7 @@ public class SubDataClient extends DataClient {
                     DebugUtil.logException(e, subdata.log);
                 }
             }
-        }, 15000);
+        }, subdata.timeout.get());
     }
 
     private void read(PrimitiveContainer<Boolean> reset, InputStream stream) {
@@ -316,7 +316,7 @@ public class SubDataClient extends DataClient {
      *
      * @param packets Packets to send
      */
-    public void sendPacket(PacketOut... packets) {
+    public synchronized void sendPacket(PacketOut... packets) {
         List<PacketOut> list = new ArrayList<>();
 
         for (PacketOut packet : packets) {
@@ -498,8 +498,9 @@ public class SubDataClient extends DataClient {
 
             if (!socket.isClosed()) getSocket().close();
             if (handler != null) {
+                ClientHandler tmp = handler;
                 setHandler(null);
-                handler = null;
+                handler = tmp;
             }
             if (subdata.getClients().values().contains(this)) subdata.removeClient(this);
 

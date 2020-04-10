@@ -136,7 +136,7 @@ public class OutputStreamL1 extends OutputStream {
         this.out.flush();
     }
 
-    private void queue(ExceptionRunnable runnable) {
+    private synchronized void queue(ExceptionRunnable runnable) {
         boolean init = false;
         if (queue == null) {
             queue = new LinkedList<>();
