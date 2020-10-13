@@ -13,4 +13,5 @@ public class DataSize {
     public static final int   GB  = MB * 1024;
     public static final long  GBB = GB * 4L;
     public static final long  TB  = GB * 1024L;
+    public static final long  TBB = TB * 4L;
 }
