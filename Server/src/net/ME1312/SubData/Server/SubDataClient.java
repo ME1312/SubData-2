@@ -46,9 +46,10 @@ public class SubDataClient extends DataClient {
     private ConnectionState state;
     private DisconnectReason isdcr;
     private Timer heartbeat;
+    private PacketNull beat;
+    private byte beats = -1;
     private Timer timeout;
     private Object asr;
-    private byte beat = -1;
 
     SubDataClient(SubDataServer subdata, Socket client) throws IOException {
         if (Util.isNull(subdata, client)) throw new NullPointerException();
@@ -66,10 +67,10 @@ public class SubDataClient extends DataClient {
         heartbeat.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (beat != -1) {
-                    ++beat;
-                    if (beat >= 5) {
-                        sendPacket(new PacketNull());
+                if (beats != -1 && (beat == null || beat.sent)) {
+                    System.out.println(++beats);
+                    if (beats >= 5) {
+                        sendPacket(beat = new PacketNull());
                     }
                 }
             }
@@ -88,7 +89,7 @@ public class SubDataClient extends DataClient {
     }
 
     private void read(PrimitiveContainer<Boolean> reset, InputStream stream) {
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
         try {
             BufferedInputStream data = new BufferedInputStream(stream, (bs.get() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.get().intValue());
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
@@ -177,7 +178,7 @@ public class SubDataClient extends DataClient {
                 e1.printStackTrace();
             }
         }
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
     }
     void read() {
         if (!socket.isClosed()) new Thread(() -> {
@@ -220,7 +221,7 @@ public class SubDataClient extends DataClient {
 
     private void write(PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
         try {
             PrimitiveContainer<Boolean> open = new PrimitiveContainer<Boolean>(true);
             OutputStream forward = new OutputStream() {
@@ -262,7 +263,7 @@ public class SubDataClient extends DataClient {
             DebugUtil.logException(e, subdata.log);
             Util.isException(data::close);
         }
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
     }
     void write() {
         if (queue != null) new Thread(() -> {
@@ -487,7 +488,7 @@ public class SubDataClient extends DataClient {
             }
 
             if (result) {
-                beat = -1;
+                beats = -1;
                 state = CLOSING;
                 if (!isClosed()) sendPacket(new PacketDisconnect());
 

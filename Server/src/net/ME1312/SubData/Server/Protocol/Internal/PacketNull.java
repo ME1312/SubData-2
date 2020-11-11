@@ -9,6 +9,12 @@ import net.ME1312.SubData.Server.SubDataClient;
  * Packet for Doing Literally Nothing
  */
 public final class PacketNull implements InitialProtocol.Packet, PacketIn, PacketOut {
+    public boolean sent = false;
+
+    @Override
+    public void sending(SubDataClient client) throws Throwable {
+        sent = true;
+    }
 
     @Override
     public void receive(SubDataClient sender) throws Throwable {

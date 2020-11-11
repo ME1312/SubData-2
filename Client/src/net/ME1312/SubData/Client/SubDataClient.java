@@ -50,7 +50,8 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private SubDataClient next;
     private Logger log;
     private Timer heartbeat;
-    private byte beat = -1;
+    private PacketNull beat;
+    private byte beats = -1;
 
     SubDataClient(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port, ObjectMap<?> login) throws IOException {
         if (Util.isNull(address, port)) throw new NullPointerException();
@@ -77,10 +78,10 @@ public class SubDataClient extends DataClient implements SubDataSender {
         this.heartbeat.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (beat != -1) {
-                    beat += 1;
-                    if (beat >= 10) {
-                        sendPacket(new PacketNull());
+                if (beats != -1 && (beat == null || beat.sent)) {
+                    System.out.println(++beats);
+                    if (beats >= 10) {
+                        sendPacket(beat = new PacketNull());
                     }
                 }
             }
@@ -91,7 +92,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     }
 
     private void read(SubDataSender sender, PrimitiveContainer<Boolean> reset, InputStream stream) {
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
         try {
             BufferedInputStream data = new BufferedInputStream(stream, (bs.get() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.get().intValue());
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
@@ -182,7 +183,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 e1.printStackTrace();
             }
         }
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
     }
     void read() {
         if (!socket.isClosed()) new Thread(() -> {
@@ -225,7 +226,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
     private void write(SubDataSender sender, PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
         try {
             PrimitiveContainer<Boolean> open = new PrimitiveContainer<>(true);
             OutputStream forward = new OutputStream() {
@@ -267,7 +268,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             DebugUtil.logException(e, log);
             Util.isException(data::close);
         }
-        if (beat != -1) beat = 0;
+        if (beats != -1) beats = 0;
     }
     void write() {
         if (queue != null) new Thread(() -> {
@@ -550,7 +551,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             }
 
             if (result) {
-                beat = -1;
+                beats = -1;
                 state = CLOSING;
                 if (!isClosed()) sendPacket(new PacketDisconnect());
 

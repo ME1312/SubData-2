@@ -30,7 +30,7 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Pack
     public ObjectMap<Integer> send(SubDataSender sender) throws Throwable {
         ObjectMap<Integer> data = new ObjectMap<Integer>();
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == POST_INITIALIZATION) {
-            Util.reflect(SubDataClient.class.getDeclaredField("beat"), sender.getConnection(), (byte) 0);
+            Util.reflect(SubDataClient.class.getDeclaredField("beats"), sender.getConnection(), (byte) 0);
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), sender.getConnection());
 
             data.set(0x0000, true);
