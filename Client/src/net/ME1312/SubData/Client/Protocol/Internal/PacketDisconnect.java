@@ -14,6 +14,7 @@ import net.ME1312.SubData.Client.SubDataSender;
 public final class PacketDisconnect implements InitialProtocol.Packet, PacketIn, PacketOut {
     @Override
     public void receive(SubDataSender sender) throws Throwable {
+        Util.reflect(SubDataClient.class.getDeclaredField("beat"), sender.getConnection(), (byte) -1);
         Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection(), ConnectionState.CLOSING);
         sender.getConnection().sendPacket(new PacketDisconnectUnderstood());
     }

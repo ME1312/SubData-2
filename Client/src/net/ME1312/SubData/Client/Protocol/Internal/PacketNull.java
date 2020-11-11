@@ -1,13 +1,14 @@
-package net.ME1312.SubData.Client.Protocol.Initial;
+package net.ME1312.SubData.Client.Protocol.Internal;
 
+import net.ME1312.SubData.Client.Protocol.Initial.InitialProtocol;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataSender;
 
 /**
- * Initial Packet for Doing Literally Nothing
+ * Packet for Doing Literally Nothing
  */
-public final class InitPacketNull implements InitialProtocol.Packet, PacketIn, PacketOut {
+public final class PacketNull implements InitialProtocol.Packet, PacketIn, PacketOut {
 
     @Override
     public void receive(SubDataSender sender) throws Throwable {

@@ -1,5 +1,6 @@
 package net.ME1312.SubData.Client.Protocol.Initial;
 
+import net.ME1312.SubData.Client.Protocol.Internal.PacketNull;
 import net.ME1312.SubData.Client.Protocol.Internal.PacketDisconnect;
 import net.ME1312.SubData.Client.Protocol.Internal.PacketDisconnectUnderstood;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
@@ -22,7 +23,7 @@ public final class InitialProtocol {
         pIn.put(0x0003, new InitPacketLogin());
         pIn.put(0xFFFA, new InitPacketVerifyState());
         pIn.put(0xFFFB, new InitPacketChangeState());
-        pIn.put(0xFFFD, new InitPacketNull());
+        pIn.put(0xFFFD, new PacketNull());
         pIn.put(0xFFFE, new PacketDisconnectUnderstood());
         pIn.put(0xFFFF, new PacketDisconnect());
 
@@ -32,7 +33,7 @@ public final class InitialProtocol {
         pOut.put(InitPacketLogin.class, 0x0003);
         pOut.put(InitPacketVerifyState.class, 0xFFFA);
         pOut.put(InitPacketChangeState.class, 0xFFFB);
-        pOut.put(InitPacketNull.class, 0xFFFD);
+        pOut.put(PacketNull.class, 0xFFFD);
         pOut.put(PacketDisconnectUnderstood.class, 0xFFFE);
         pOut.put(PacketDisconnect.class, 0xFFFF);
     }

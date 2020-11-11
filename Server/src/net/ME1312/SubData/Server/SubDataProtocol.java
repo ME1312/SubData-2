@@ -43,23 +43,25 @@ public class SubDataProtocol extends DataProtocol {
         ciphers.put("NULL", NEH.get());
         ciphers.put("NONE", NEH.get());
 
+        pIn.put(0xFFF6, new PacketDownloadClientList(null, null));
         pIn.put(0xFFF7, new PacketOpenChannel());
         pIn.put(0xFFF8, new PacketPingResponse());
         pIn.put(0xFFF9, new PacketPing());
         pIn.put(0xFFFA, new InitPacketVerifyState());
-        pIn.put(0xFFFB, new PacketDownloadClientList(null, null));
+        pIn.put(0xFFFB, new PacketRecieveMessage());
         pIn.put(0xFFFC, new PacketForwardPacket());
-        pIn.put(0xFFFD, new PacketRecieveMessage());
+        pIn.put(0xFFFD, new PacketNull());
         pIn.put(0xFFFE, new PacketDisconnectUnderstood());
         pIn.put(0xFFFF, new PacketDisconnect());
 
+        pOut.put(PacketDownloadClientList.class, 0xFFF6);
         pOut.put(PacketOpenChannel.class, 0xFFF7);
         pOut.put(PacketPingResponse.class, 0xFFF8);
         pOut.put(PacketPing.class, 0xFFF9);
         pOut.put(InitPacketVerifyState.class, 0xFFFA);
-        pOut.put(PacketDownloadClientList.class, 0xFFFB);
+        pOut.put(PacketSendMessage.class, 0xFFFB);
         pOut.put(PacketForwardPacket.class, 0xFFFC);
-        pOut.put(PacketSendMessage.class, 0xFFFD);
+        pOut.put(PacketNull.class, 0xFFFD);
         pOut.put(PacketDisconnectUnderstood.class, 0xFFFE);
         pOut.put(PacketDisconnect.class, 0xFFFF);
     }

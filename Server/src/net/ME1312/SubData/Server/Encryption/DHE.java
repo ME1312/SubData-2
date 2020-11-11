@@ -10,7 +10,7 @@ import net.ME1312.SubData.Server.DataClient;
 import net.ME1312.SubData.Server.Library.EscapedOutputStream;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Server.Library.OutputStreamL1;
-import net.ME1312.SubData.Server.Protocol.Initial.InitPacketNull;
+import net.ME1312.SubData.Server.Protocol.Internal.PacketNull;
 import net.ME1312.SubData.Server.SubDataClient;
 
 import javax.crypto.KeyAgreement;
@@ -190,7 +190,7 @@ public class DHE implements Cipher, CipherFactory {
                 OutputStreamL1 stream = Util.reflect(SubDataClient.class.getDeclaredField("out"), client);
                 stream.control('\u0018');
                 stream.flush();
-                ((SubDataClient) client).sendPacket(new InitPacketNull());
+                ((SubDataClient) client).sendPacket(new PacketNull());
             }
             while (data.next == null) {
                 Thread.sleep(REFRESH);
