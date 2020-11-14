@@ -80,7 +80,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             @Override
             public void run() {
                 if (beats != -1 && (beat == null || beat.sent)) {
-                    System.out.println(++beats);
+                    ++beats;
                     if (beats >= 10) {
                         sendPacket(beat = new PacketNull());
                     }
