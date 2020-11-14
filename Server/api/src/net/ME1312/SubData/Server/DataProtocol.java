@@ -1,6 +1,7 @@
 package net.ME1312.SubData.Server;
 
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.ContainedPair;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Server.Protocol.MessageIn;
@@ -14,7 +15,7 @@ import java.util.List;
  * SubData Protocol API Class
  */
 public abstract class DataProtocol {
-    final HashMap<Class<? extends MessageOut>, NamedContainer<String, String>> mOut = new HashMap<Class<? extends MessageOut>, NamedContainer<String, String>>();
+    final HashMap<Class<? extends MessageOut>, Pair<String, String>> mOut = new HashMap<Class<? extends MessageOut>, Pair<String, String>>();
     final HashMap<String, HashMap<String, MessageIn>> mIn = new HashMap<String, HashMap<String, MessageIn>>();
     List<String> whitelist = new ArrayList<String>();
 
@@ -74,7 +75,7 @@ public abstract class DataProtocol {
      */
     public void registerMessage(String channel, String handle, Class<? extends MessageOut> message) {
         if (Util.isNull(message, channel, handle)) throw new NullPointerException();
-        mOut.put(message, new NamedContainer<String, String>(channel.toLowerCase(), handle));
+        mOut.put(message, new ContainedPair<String, String>(channel.toLowerCase(), handle));
     }
 
     /**
@@ -85,7 +86,7 @@ public abstract class DataProtocol {
      */
     public void unregisterMessage(String channel, Class<? extends MessageOut> message) {
         if (Util.isNull(channel, message)) throw new NullPointerException();
-        if (mOut.keySet().contains(message) && mOut.get(message).name().equalsIgnoreCase(channel)) mOut.remove(message);
+        if (mOut.keySet().contains(message) && mOut.get(message).key().equalsIgnoreCase(channel)) mOut.remove(message);
     }
 
     /**

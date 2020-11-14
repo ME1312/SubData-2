@@ -1,6 +1,7 @@
 package net.ME1312.SubData.Server.Encryption;
 
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.ContainedPair;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.SubData.Server.DataClient;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 
@@ -66,7 +67,7 @@ public final class AES implements net.ME1312.SubData.Server.Cipher {
      *
      * @param keyLength 128, 192, or 256 bit mode
      */
-    static NamedContainer<net.ME1312.SubData.Server.Cipher, String> random(int keyLength) {
+    static Pair<net.ME1312.SubData.Server.Cipher, String> random(int keyLength) {
         StringBuilder builder = new StringBuilder();
         SecureRandom random = new SecureRandom();
         int i = random.nextInt(keyLength + 1) + keyLength;
@@ -76,7 +77,7 @@ public final class AES implements net.ME1312.SubData.Server.Cipher {
         }
 
         String key = builder.toString();
-        return new NamedContainer<>(new AES(keyLength, key), key);
+        return new ContainedPair<>(new AES(keyLength, key), key);
     }
 
     /**

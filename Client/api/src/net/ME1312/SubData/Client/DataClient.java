@@ -3,7 +3,7 @@ package net.ME1312.SubData.Client;
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.SubData.Client.Library.DisconnectReason;
 import net.ME1312.SubData.Client.Library.PingResponse;
 import net.ME1312.SubData.Client.Protocol.Forwardable;
@@ -29,7 +29,7 @@ public abstract class DataClient implements DataSender {
     public static class Events {
         LinkedList<Callback<DataClient>> ready = new LinkedList<Callback<DataClient>>();
         LinkedList<ReturnCallback<DataClient, Boolean>> close = new LinkedList<ReturnCallback<DataClient, Boolean>>();
-        LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> closed = new LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>>();
+        LinkedList<Callback<Pair<DisconnectReason, DataClient>>> closed = new LinkedList<Callback<Pair<DisconnectReason, DataClient>>>();
         private Events() {}
 
         /**
@@ -58,7 +58,7 @@ public abstract class DataClient implements DataSender {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void closed(Callback<NamedContainer<DisconnectReason, DataClient>>... callbacks) {
+        public final void closed(Callback<Pair<DisconnectReason, DataClient>>... callbacks) {
             closed.addAll(Arrays.asList(callbacks));
         }
     }

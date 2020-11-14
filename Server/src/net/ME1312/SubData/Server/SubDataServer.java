@@ -3,6 +3,7 @@ package net.ME1312.SubData.Server;
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container.Container;
+import net.ME1312.Galaxi.Library.Container.Value;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
 import net.ME1312.SubData.Server.Library.DebugUtil;
@@ -25,7 +26,7 @@ public class SubDataServer extends DataServer {
     private ServerSocket server;
     private String address;
     SubDataProtocol protocol;
-    Container<Long> timeout;
+    Value<Long> timeout;
     Callback<Runnable> scheduler;
     String cipher;
     Logger log;
@@ -54,7 +55,7 @@ public class SubDataServer extends DataServer {
                 last = protocol.ciphers.get(next.toUpperCase());
             } else if (last instanceof CipherFactory) {
                 final Cipher lastF = last;
-                last = Util.getDespiteException(() -> ((CipherFactory) lastF).newCipher(next.toUpperCase()).name(), null);
+                last = Util.getDespiteException(() -> ((CipherFactory) lastF).newCipher(next.toUpperCase()).key(), null);
             } else {
                 last = null;
             }
@@ -96,7 +97,7 @@ public class SubDataServer extends DataServer {
      * @return Timeout Time
      */
     public long getTimeout() {
-        return timeout.get();
+        return timeout.value();
     }
 
     /**

@@ -9,7 +9,7 @@ import net.ME1312.SubData.Server.Protocol.PacketOut;
 import java.util.HashMap;
 
 /**
- * Initial Protocol Container Class
+ * Initial Protocol Value Class
  */
 public final class InitialProtocol {
     private static final HashMap<Class<? extends PacketOut>, Integer> pOut = new HashMap<Class<? extends PacketOut>, Integer>();

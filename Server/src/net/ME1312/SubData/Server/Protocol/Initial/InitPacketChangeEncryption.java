@@ -1,7 +1,8 @@
 package net.ME1312.SubData.Server.Protocol.Initial;
 
+import net.ME1312.Galaxi.Library.Container.ContainedPair;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.*;
 import net.ME1312.SubData.Server.Library.*;
@@ -25,22 +26,22 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
             String cipher = Util.reflect(SubDataServer.class.getDeclaredField("cipher"), client.getServer());
             String[] ciphers = (cipher.contains("/"))?cipher.split("/"):new String[]{cipher};
             Cipher last = Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client);
-            NamedContainer<Cipher, String> next;
+            Pair<Cipher, String> next;
             int i = Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client);
 
             if (i <= 0) {
-                next = new NamedContainer<>(Util.<HashMap<String, Cipher>>reflect(SubDataProtocol.class.getDeclaredField("ciphers"), client.getServer().getProtocol()).get(ciphers[0].toUpperCase()), null);
+                next = new ContainedPair<>(Util.<HashMap<String, Cipher>>reflect(SubDataProtocol.class.getDeclaredField("ciphers"), client.getServer().getProtocol()).get(ciphers[0].toUpperCase()), null);
             } else if (last instanceof CipherFactory) {
                 next = ((CipherFactory) last).newCipher(ciphers[i].toUpperCase());
             } else {
                 next = null;
             }
 
-            if (next != null && next.name() != null) {
-                if (next.name() != last) last.retire(client);
-                data.set(0x0000, next.name().getName());
-                if (next.get() != null) data.set(0x0001, next.get());
-                Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client, next.name());
+            if (next != null && next.key() != null) {
+                if (next.key() != last) last.retire(client);
+                data.set(0x0000, next.key().getName());
+                if (next.value() != null) data.set(0x0001, next.value());
+                Util.reflect(SubDataClient.class.getDeclaredField("cipher"), client, next.key());
                 return data;
             } else {
                 DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + ciphers[i] + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()));

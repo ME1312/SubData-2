@@ -2,7 +2,7 @@ package net.ME1312.SubData.Client.Encryption;
 
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.*;
 import net.ME1312.SubData.Client.Library.EscapedOutputStream;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 public class DHE implements Cipher, CipherFactory {
 
     // Supported Forward Ciphers
-    private static final HashMap<String, ReturnRunnable<NamedContainer<Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<NamedContainer<Cipher, String>>>();
+    private static final HashMap<String, ReturnRunnable<Pair<Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<Pair<Cipher, String>>>();
     private static final HashMap<String, ReturnCallback<String, Cipher>> forwardP = new HashMap<String, ReturnCallback<String, Cipher>>();
 
     // Cipher Properties
@@ -192,7 +192,7 @@ public class DHE implements Cipher, CipherFactory {
     }
 
     @Override
-    public NamedContainer<Cipher, String> newCipher(String handle) {
+    public Pair<Cipher, String> newCipher(String handle) {
         return forwardG.getOrDefault(handle.toUpperCase(), () -> null).run();
     }
 
@@ -201,7 +201,7 @@ public class DHE implements Cipher, CipherFactory {
         return forwardP.getOrDefault(handle.toUpperCase(), token -> null).run(key);
     }
 
-    public static void addCipher(String handle, ReturnRunnable<NamedContainer<Cipher, String>> generator, ReturnCallback<String, Cipher> parser) {
+    public static void addCipher(String handle, ReturnRunnable<Pair<Cipher, String>> generator, ReturnCallback<String, Cipher> parser) {
         if (Util.isNull(generator)) throw new NullPointerException();
         handle = handle.toUpperCase();
         if (!forwardG.keySet().contains(handle)) forwardG.put(handle, generator);

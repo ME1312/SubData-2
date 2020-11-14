@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Server.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.DataProtocol;
 import net.ME1312.SubData.Server.DataServer;
@@ -34,15 +34,15 @@ public class PacketSendMessage implements PacketStreamOut {
 
     @Override
     public void send(SubDataClient client, OutputStream data) throws Throwable {
-        HashMap<Class<? extends MessageOut>, NamedContainer<String, String>> mOut = Util.reflect(DataProtocol.class.getDeclaredField("mOut"), client.getServer().getProtocol());
+        HashMap<Class<? extends MessageOut>, Pair<String, String>> mOut = Util.reflect(DataProtocol.class.getDeclaredField("mOut"), client.getServer().getProtocol());
 
         if (!mOut.keySet().contains(message.getClass())) throw new IllegalMessageException("Could not find handle for message: " + message.getClass().getCanonicalName());
         if (message.version() == null || message.version().toString().length() == 0) throw new IllegalMessageException("Cannot send message with null version: " + message.getClass().getCanonicalName());
 
         EscapedOutputStream out = new EscapedOutputStream(data, '\u001B', '\u0003');
-        out.write(mOut.get(message.getClass()).name().getBytes(StandardCharsets.UTF_8));
+        out.write(mOut.get(message.getClass()).key().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
-        out.write(mOut.get(message.getClass()).get().getBytes(StandardCharsets.UTF_8));
+        out.write(mOut.get(message.getClass()).value().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
         out.write(message.version().toString().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');

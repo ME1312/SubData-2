@@ -2,6 +2,7 @@ package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Container.Container;
+import net.ME1312.Galaxi.Library.Container.Value;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
@@ -33,7 +34,7 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
     ArrayList<Version> version = new ArrayList<Version>();
     String name;
-    Container<Long> bs = new Container<>((long) DataSize.MB);
+    Value<Long> bs = new Container<>((long) DataSize.MB);
 
     /**
      * Create a new Protocol
@@ -180,7 +181,7 @@ public class SubDataProtocol extends DataProtocol {
      * @return Block Size
      */
     public long getBlockSize() {
-        return bs.get();
+        return bs.value();
     }
 
     /**
@@ -189,7 +190,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param size Block Size
      */
     public void setBlockSize(long size) {
-        bs.set(size);
+        bs.value(size);
     }
 
     /**

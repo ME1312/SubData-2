@@ -2,7 +2,7 @@ package net.ME1312.SubData.Server;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Library.DisconnectReason;
 import net.ME1312.SubData.Server.Library.PingResponse;
@@ -27,7 +27,7 @@ public abstract class DataClient {
     public static class Events {
         LinkedList<Callback<DataClient>> ready = new LinkedList<Callback<DataClient>>();
         LinkedList<ReturnCallback<DataClient, Boolean>> close = new LinkedList<ReturnCallback<DataClient, Boolean>>();
-        LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> closed = new LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>>();
+        LinkedList<Callback<Pair<DisconnectReason, DataClient>>> closed = new LinkedList<Callback<Pair<DisconnectReason, DataClient>>>();
         private Events() {}
 
         /**
@@ -56,7 +56,7 @@ public abstract class DataClient {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void closed(Callback<NamedContainer<DisconnectReason, DataClient>>... callbacks) {
+        public final void closed(Callback<Pair<DisconnectReason, DataClient>>... callbacks) {
             closed.addAll(Arrays.asList(callbacks));
         }
     }

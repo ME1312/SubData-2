@@ -2,6 +2,7 @@ package net.ME1312.SubData.Server;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Container.Container;
+import net.ME1312.Galaxi.Library.Container.Value;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Server.Encryption.NEH;
@@ -32,8 +33,8 @@ public class SubDataProtocol extends DataProtocol {
     int MAX_QUEUE = 64;
     Version version;
     String name;
-    Container<Long> timeout = new Container<>(30000L);
-    Container<Long> bs = new Container<>((long) DataSize.MB);
+    Value<Long> timeout = new Container<>(30000L);
+    Value<Long> bs = new Container<>((long) DataSize.MB);
     AuthService<?> as;
 
     /**
@@ -166,7 +167,7 @@ public class SubDataProtocol extends DataProtocol {
      * @return Block Size
      */
     public long getBlockSize() {
-        return bs.get();
+        return bs.value();
     }
 
     /**
@@ -175,7 +176,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param size Block Size
      */
     public void setBlockSize(long size) {
-        bs.set(size);
+        bs.value(size);
     }
 
     /**
@@ -184,7 +185,7 @@ public class SubDataProtocol extends DataProtocol {
      * @return Timeout Time
      */
     public long getTimeout() {
-        return timeout.get();
+        return timeout.value();
     }
 
     /**
@@ -193,7 +194,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param time Timeout Time
      */
     public void setTimeout(long time) {
-        timeout.set(time);
+        timeout.value(time);
     }
 
     /**

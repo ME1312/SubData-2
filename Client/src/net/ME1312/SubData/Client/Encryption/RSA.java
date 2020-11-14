@@ -3,7 +3,8 @@ package net.ME1312.SubData.Client.Encryption;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
 import net.ME1312.Galaxi.Library.Container.Container;
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
+import net.ME1312.Galaxi.Library.Container.Value;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.CipherFactory;
 import net.ME1312.SubData.Client.DataClient;
@@ -26,7 +27,7 @@ import java.util.HashMap;
 public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactory {
 
     // Supported Forward Ciphers
-    private static final HashMap<String, ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>>>();
+    private static final HashMap<String, ReturnRunnable<Pair<net.ME1312.SubData.Client.Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<Pair<net.ME1312.SubData.Client.Cipher, String>>>();
     private static final HashMap<String, ReturnCallback<String, net.ME1312.SubData.Client.Cipher>> forwardP = new HashMap<String, ReturnCallback<String, net.ME1312.SubData.Client.Cipher>>();
 
     // RSA specification
@@ -105,9 +106,9 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
     @Override
     public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         EscapedOutputStream stream = new EscapedOutputStream(out, '\u001B', '\u0017');
-        Container<Boolean> reset = new Container<>(false);
-        while (!reset.get()) {
-            Container<Boolean> wrote = new Container<>(false);
+        Value<Boolean> reset = new Container<>(false);
+        while (!reset.value()) {
+            Value<Boolean> wrote = new Container<>(false);
             encrypt(new InputStream() {
                 boolean open = true;
                 int bc = 0;
@@ -117,8 +118,8 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
                         return -1;
                     } else {
                         int b = in.read();
-                        if (b == -1) reset.set(true);
-                        else wrote.set(true);
+                        if (b == -1) reset.value(true);
+                        else wrote.value(true);
                         return b;
                     }
                 }
@@ -140,7 +141,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
                     }
                 }
             }, stream);
-            if (wrote.get()) {
+            if (wrote.value()) {
                 stream.control('\u0017');
                 stream.flush();
             }
@@ -171,8 +172,8 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
 
     @Override
     public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
-        Container<Boolean> reset = new Container<>(false);
-        while (!reset.get()) decrypt(new InputStream() {
+        Value<Boolean> reset = new Container<>(false);
+        while (!reset.value()) decrypt(new InputStream() {
             boolean open = true;
             Integer pending = null;
 
@@ -182,7 +183,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
 
                 switch (b) {
                     case -1:
-                        reset.set(true);
+                        reset.value(true);
                     case '\u001B':
                         int next = in.read();
                         switch (next) {
@@ -245,7 +246,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
     }
 
     @Override
-    public NamedContainer<net.ME1312.SubData.Client.Cipher, String> newCipher(String handle) {
+    public Pair<net.ME1312.SubData.Client.Cipher, String> newCipher(String handle) {
         return forwardG.getOrDefault(handle.toUpperCase(), () -> null).run();
     }
 
@@ -254,7 +255,7 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
         return forwardP.getOrDefault(handle.toUpperCase(), token -> null).run(key);
     }
 
-    public static void addCipher(String handle, ReturnRunnable<NamedContainer<net.ME1312.SubData.Client.Cipher, String>> generator, ReturnCallback<String, net.ME1312.SubData.Client.Cipher> parser) {
+    public static void addCipher(String handle, ReturnRunnable<Pair<net.ME1312.SubData.Client.Cipher, String>> generator, ReturnCallback<String, net.ME1312.SubData.Client.Cipher> parser) {
         if (Util.isNull(generator)) throw new NullPointerException();
         handle = handle.toUpperCase();
         if (!forwardG.keySet().contains(handle)) forwardG.put(handle, generator);

@@ -1,6 +1,6 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Container.PrimitiveContainer;
+import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Library.ForwardedDataSender;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
@@ -63,7 +63,7 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
         }
 
         if (position >= 16) {
-            Util.reflect(SubDataClient.class.getDeclaredMethod("read", SubDataSender.class, PrimitiveContainer.class, InputStream.class), sender.getConnection(), new ForwardedDataSender(sender.getConnection(), new UUID(id_p1, id_p2)), new PrimitiveContainer<>(false), in);
+            Util.reflect(SubDataClient.class.getDeclaredMethod("read", SubDataSender.class, Container.class, InputStream.class), sender.getConnection(), new ForwardedDataSender(sender.getConnection(), new UUID(id_p1, id_p2)), new Container<>(false), in);
         } else {
             throw new IllegalArgumentException("Invalid UUID data for Sender ID: [" + id_p1 + ", " + id_p2 + "]");
         }

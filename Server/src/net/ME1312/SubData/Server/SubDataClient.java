@@ -2,9 +2,10 @@ package net.ME1312.SubData.Server;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
+import net.ME1312.Galaxi.Library.Container.ContainedPair;
 import net.ME1312.Galaxi.Library.Container.Container;
-import net.ME1312.Galaxi.Library.Container.NamedContainer;
-import net.ME1312.Galaxi.Library.Container.PrimitiveContainer;
+import net.ME1312.Galaxi.Library.Container.Value;
+import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
 import net.ME1312.SubData.Server.Library.*;
@@ -41,7 +42,7 @@ public class SubDataClient extends DataClient {
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
     private SubDataServer subdata;
-    private Container<Long> bs;
+    private Value<Long> bs;
     private SubDataClient next;
     private ConnectionState state;
     private DisconnectReason isdcr;
@@ -57,8 +58,8 @@ public class SubDataClient extends DataClient {
         this.bs = subdata.protocol.bs;
         state = PRE_INITIALIZATION;
         socket = client;
-        in = new BufferedInputStream(client.getInputStream(), (bs.get() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.get().intValue());
-        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs.get());
+        in = new BufferedInputStream(client.getInputStream(), (bs.value() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.value().intValue());
+        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs.value());
         queue = null;
         statequeue = new HashMap<>();
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
@@ -85,13 +86,13 @@ public class SubDataClient extends DataClient {
                     DebugUtil.logException(e, subdata.log);
                 }
             }
-        }, subdata.timeout.get());
+        }, subdata.timeout.value());
     }
 
-    private void read(PrimitiveContainer<Boolean> reset, InputStream stream) {
+    private void read(Container<Boolean> reset, InputStream stream) {
         if (beats != -1) beats = 0;
         try {
-            BufferedInputStream data = new BufferedInputStream(stream, (bs.get() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.get().intValue());
+            BufferedInputStream data = new BufferedInputStream(stream, (bs.value() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.value().intValue());
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
             int id = -1, version = -1;
 
@@ -113,7 +114,7 @@ public class SubDataClient extends DataClient {
 
             // Step 4 // Create a detached data forwarding InputStream
             if (state != CLOSED && id >= 0 && version >= 0) {
-                PrimitiveContainer<Boolean> open = new PrimitiveContainer<>(true);
+                Container<Boolean> open = new Container<>(true);
                 InputStream forward = new InputStream() {
                     @Override
                     public int read() throws IOException {
@@ -182,7 +183,7 @@ public class SubDataClient extends DataClient {
     }
     void read() {
         if (!socket.isClosed()) new Thread(() -> {
-            PrimitiveContainer<Boolean> reset = new PrimitiveContainer<>(false);
+            Container<Boolean> reset = new Container<>(false);
             try {
                 // Step 1 // Parse Escapes in the Encrypted Data
                 InputStream raw = new InputStreamL1(in, () -> {
@@ -223,7 +224,7 @@ public class SubDataClient extends DataClient {
         // Step 1 // Create a detached data forwarding OutputStream
         if (beats != -1) beats = 0;
         try {
-            PrimitiveContainer<Boolean> open = new PrimitiveContainer<Boolean>(true);
+            Container<Boolean> open = new Container<Boolean>(true);
             OutputStream forward = new OutputStream() {
                 @Override
                 public void write(int b) throws IOException {
@@ -413,7 +414,7 @@ public class SubDataClient extends DataClient {
      * @return Block Size
      */
     public long getBlockSize() {
-        return bs.get();
+        return bs.value();
     }
 
     /**
@@ -527,9 +528,9 @@ public class SubDataClient extends DataClient {
 
             final DisconnectReason freason = reason;
             subdata.scheduler.run(() -> {
-                LinkedList<Callback<NamedContainer<DisconnectReason, DataClient>>> events = new LinkedList<>(on.closed);
-                for (Callback<NamedContainer<DisconnectReason, DataClient>> next : events) try {
-                    if (next != null) next.run(new NamedContainer<>(freason, this));
+                LinkedList<Callback<Pair<DisconnectReason, DataClient>>> events = new LinkedList<>(on.closed);
+                for (Callback<Pair<DisconnectReason, DataClient>> next : events) try {
+                    if (next != null) next.run(new ContainedPair<>(freason, this));
                 } catch (Throwable e) {
                     DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.log);
                 }
