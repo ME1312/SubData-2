@@ -39,6 +39,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
     private BufferedInputStream in;
     private OutputStreamL1 out;
+    private Thread read;
     private Value<Long> bs;
     private SubDataProtocol protocol;
     private Cipher cipher = NEH.get();
@@ -93,7 +94,6 @@ public class SubDataClient extends DataClient implements SubDataSender {
     }
 
     private void read(SubDataSender sender, Container<Boolean> reset, InputStream stream) {
-        if (beats != -1) beats = 0;
         try {
             BufferedInputStream data = new BufferedInputStream(stream, (bs.value() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.value().intValue());
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
@@ -116,6 +116,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             }
 
             // Step 4 // Create a detached data forwarding InputStream
+            if (beats != -1) beats = 0;
             if (state != CLOSED && id >= 0 && version >= 0) {
                 Container<Boolean> open = new Container<>(true);
                 InputStream forward = new InputStream() {
@@ -173,6 +174,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     }
                 }
             }
+        } catch (InterruptedIOException e) {
         } catch (Exception e) {
             if (!reset.value) try {
                 if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
@@ -187,14 +189,14 @@ public class SubDataClient extends DataClient implements SubDataSender {
         if (beats != -1) beats = 0;
     }
     void read() {
-        if (!socket.isClosed()) new Thread(() -> {
+        if (!isClosed()) new Thread(() -> {
             Container<Boolean> reset = new Container<>(false);
-            try {
+            if (!isClosed()) try {
                 // Step 1 // Parse Escapes in the Encrypted Data
                 InputStream raw = new InputStreamL1(in, () -> {
                     if (state != PRE_INITIALIZATION) reset.value = true;
                 }, () -> {
-                    if (!socket.isClosed()) {
+                    if (!isClosed()) {
                         SubDataClient.this.read();
                     } else Util.isException(() -> close(CONNECTION_INTERRUPTED));
                 });
@@ -203,7 +205,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 PipedOutputStream forward = new PipedOutputStream(data);
 
                 // Step 3 // Parse the SubData Packet Formatting
-                new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
+                (read = new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')')).start();
 
                 // Step 2 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
@@ -573,10 +575,11 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
     void close(DisconnectReason reason) throws IOException {
         if (state != CLOSED && !socket.isClosed()) {
+            state = CLOSED;
             heartbeat.cancel();
+            if (read != null) read.interrupt();
             if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
             if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
-            state = CLOSED;
             if (reason != CLOSE_REQUESTED) {
                 log.warning("Disconnected from " + socket.getRemoteSocketAddress() + ": " + reason);
             } else log.info("Disconnected from " + socket.getRemoteSocketAddress());

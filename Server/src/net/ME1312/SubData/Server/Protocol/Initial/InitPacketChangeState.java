@@ -9,6 +9,7 @@ import net.ME1312.SubData.Server.SubDataClient;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Timer;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 
@@ -28,6 +29,7 @@ public final class InitPacketChangeState implements InitialProtocol.Packet, Pack
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
 
             Util.reflect(SubDataClient.class.getDeclaredField("state"), client, POST_INITIALIZATION);
+            Util.<Timer>reflect(SubDataClient.class.getDeclaredField("timeout"), client).cancel();
             client.sendPacket(new InitPacketVerifyState());
         } else if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == POST_INITIALIZATION) {
             setReady(client, true);
