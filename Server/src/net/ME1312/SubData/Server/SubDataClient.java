@@ -77,7 +77,7 @@ public class SubDataClient extends DataClient {
                 }
             }
         }, 1000, 1000);
-        timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
+        Timer timeout = this.timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
         timeout.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -512,12 +512,13 @@ public class SubDataClient extends DataClient {
     }
     void close(DisconnectReason reason) throws IOException {
         if (state != CLOSED) {
+            if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
+            else if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
+
             state = CLOSED;
             timeout.cancel();
             heartbeat.cancel();
             if (read != null) read.interrupt();
-            if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
-            if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
             if (reason != CLOSE_REQUESTED) {
                 subdata.log.warning(getAddress().toString() + " has disconnected: " + reason);
             } else subdata.log.info(getAddress().toString() + " has disconnected");

@@ -567,6 +567,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                         } catch (IOException e) {
                             DebugUtil.logException(e, log);
                         }
+                        timeout.cancel();
                     }
                 }, 5000);
             }
@@ -574,12 +575,13 @@ public class SubDataClient extends DataClient implements SubDataSender {
     }
 
     void close(DisconnectReason reason) throws IOException {
-        if (state != CLOSED && !socket.isClosed()) {
+        if (state != CLOSED) {
+            if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
+            else if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
+
             state = CLOSED;
             heartbeat.cancel();
             if (read != null) read.interrupt();
-            if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
-            if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
             if (reason != CLOSE_REQUESTED) {
                 log.warning("Disconnected from " + socket.getRemoteSocketAddress() + ": " + reason);
             } else log.info("Disconnected from " + socket.getRemoteSocketAddress());
@@ -600,6 +602,6 @@ public class SubDataClient extends DataClient implements SubDataSender {
     }
 
     public boolean isClosed() {
-        return socket.isClosed();
+        return state == CLOSED || socket.isClosed();
     }
 }
