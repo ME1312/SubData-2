@@ -3,8 +3,11 @@ package net.ME1312.SubData.Client.Protocol.Initial;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.*;
-import net.ME1312.SubData.Client.Library.*;
+import net.ME1312.SubData.Client.Library.ConnectionState;
+import net.ME1312.SubData.Client.Library.DebugUtil;
+import net.ME1312.SubData.Client.Library.DisconnectReason;
 import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
+import net.ME1312.SubData.Client.Library.OutputStreamL1;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 

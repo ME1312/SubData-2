@@ -1,10 +1,10 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Library.PingResponse;
-import net.ME1312.SubData.Client.Protocol.*;
+import net.ME1312.SubData.Client.Protocol.Forwardable;
+import net.ME1312.SubData.Client.Protocol.PacketStreamIn;
+import net.ME1312.SubData.Client.Protocol.PacketStreamOut;
 import net.ME1312.SubData.Client.SubDataSender;
 
 import java.io.ByteArrayOutputStream;
@@ -16,7 +16,8 @@ import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
 
-import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.*;
+import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.callbacks;
+import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.data;
 
 /**
  * Ping Response Packet

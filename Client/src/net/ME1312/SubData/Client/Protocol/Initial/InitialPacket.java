@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.logging.Logger;
 
-import static net.ME1312.SubData.Client.Library.ConnectionState.*;
+import static net.ME1312.SubData.Client.Library.ConnectionState.READY;
 
 /**
  * InitialPacket Tag Class<br>

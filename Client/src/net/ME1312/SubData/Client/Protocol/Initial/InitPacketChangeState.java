@@ -1,12 +1,13 @@
 package net.ME1312.SubData.Client.Protocol.Initial;
 
 import net.ME1312.Galaxi.Library.Util;
-import net.ME1312.SubData.Client.Library.DisconnectReason;
-import net.ME1312.SubData.Client.Protocol.*;
+import net.ME1312.SubData.Client.Protocol.PacketIn;
+import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataClient;
 import net.ME1312.SubData.Client.SubDataSender;
 
-import static net.ME1312.SubData.Client.Library.ConnectionState.*;
+import static net.ME1312.SubData.Client.Library.ConnectionState.INITIALIZATION;
+import static net.ME1312.SubData.Client.Library.ConnectionState.POST_INITIALIZATION;
 
 /**
  * Initial Packet for Changing States Class

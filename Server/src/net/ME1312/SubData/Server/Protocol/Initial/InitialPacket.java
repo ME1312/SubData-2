@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.logging.Logger;
 
-import static net.ME1312.SubData.Server.Library.ConnectionState.*;
+import static net.ME1312.SubData.Server.Library.ConnectionState.READY;
 
 /**
  * InitialPacket Tag Class<br>

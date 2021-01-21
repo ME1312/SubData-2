@@ -1,8 +1,6 @@
 package net.ME1312.SubData.Client;
 
 import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Container.Container;
-import net.ME1312.Galaxi.Library.Container.Value;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
@@ -11,7 +9,6 @@ import net.ME1312.SubData.Client.Library.DataSize;
 import net.ME1312.SubData.Client.Library.DebugUtil;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketVerifyState;
 import net.ME1312.SubData.Client.Protocol.Internal.*;
-import net.ME1312.SubData.Client.Protocol.Internal.PacketDownloadClientList;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 

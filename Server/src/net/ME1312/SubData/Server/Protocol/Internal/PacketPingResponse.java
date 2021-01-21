@@ -15,7 +15,8 @@ import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
 
-import static net.ME1312.SubData.Server.Protocol.Internal.PacketPing.*;
+import static net.ME1312.SubData.Server.Protocol.Internal.PacketPing.callbacks;
+import static net.ME1312.SubData.Server.Protocol.Internal.PacketPing.data;
 
 /**
  * Ping Response Packet

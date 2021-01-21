@@ -20,7 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Random;
 
 /**

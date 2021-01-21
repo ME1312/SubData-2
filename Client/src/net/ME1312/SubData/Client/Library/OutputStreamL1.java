@@ -30,24 +30,11 @@ public class OutputStreamL1 extends OutputStream {
     }
 
     public void resize(int limit) {
-        if (this.limit != limit) {
-            this.limit = limit;
-            if (cursor >= limit) {
-                flush();
-            } else {
-                byte[] old = block;
-                block = new byte[limit];
-                System.arraycopy(old, 0, block, 0, cursor);
-            }
-        }
+        this.limit = limit;
     }
 
     @Override
-    public void write(byte[] data, int offset, int length) throws IOException {
-        if ((offset < 0) || (offset > data.length) || (length < 0) || ((offset + length) > data.length) || ((offset + length) < 0)) {
-            throw new IndexOutOfBoundsException();
-        }
-
+    public void write(byte[] data, int offset, int length) {
         int transferred;
         do {
             System.arraycopy(data, offset, block, cursor, transferred = Math.min(length, block.length - cursor));
@@ -70,7 +57,7 @@ public class OutputStreamL1 extends OutputStream {
     }
 
     public void control(int b) {
-        writer.submit(() -> {
+        if (!writer.isShutdown()) writer.submit(() -> {
             try {
                 out.write(b);
                 out.flush();
@@ -84,7 +71,7 @@ public class OutputStreamL1 extends OutputStream {
 
     @Override
     public void flush() {
-        if (cursor > 0) {
+        if (cursor > 0 && !writer.isShutdown()) {
             final DataFlusher data = new DataFlusher(block, cursor);
             writer.submit(data::flush);
             cursor = 0;

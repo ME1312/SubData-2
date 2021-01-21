@@ -3,8 +3,10 @@ package net.ME1312.SubData.Client.Protocol;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.SubData.Client.Library.MessagePackHandler;
 import net.ME1312.SubData.Client.SubDataSender;
+
 import org.msgpack.core.MessageInsufficientBufferException;
 import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
 
 import java.io.InputStream;
 
@@ -26,8 +28,8 @@ public interface PacketObjectIn<K> extends PacketStreamIn {
 
     @Override
     default void receive(SubDataSender sender, InputStream data) throws Throwable {
-        try {
-            receive(sender, MessagePackHandler.unpack(MessagePack.newDefaultUnpacker(data).unpackValue().asMapValue()));
+        try (MessageUnpacker msg = MessagePack.newDefaultUnpacker(data)) {
+            receive(sender, MessagePackHandler.unpack(msg.unpackValue().asMapValue()));
         } catch (MessageInsufficientBufferException e) {
             data.close();
             receive(sender, (ObjectMap<K>) null);

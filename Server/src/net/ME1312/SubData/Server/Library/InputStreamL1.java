@@ -31,10 +31,6 @@ public class InputStreamL1 {
 
         @Override
         public int read(byte[] data, int offset, int length) throws IOException {
-            if (offset < 0 || length < 0 || length > data.length - offset) {
-                throw new IndexOutOfBoundsException();
-            }
-
             if (open == this) {
                 int total = 0;
                 int transferred;
@@ -104,7 +100,6 @@ public class InputStreamL1 {
                             return false;
                         case '\u0018': // [CAN] Read Reset
                             reset.run();
-                            return true;
                         case '\u0017': // [ETB] End of Packet
                             shutdown();
                             close.run();
@@ -122,6 +117,7 @@ public class InputStreamL1 {
 
     public void shutdown() {
         if (open != null) {
+            reset.run();
             open.shutdown();
         }
     }

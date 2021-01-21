@@ -3,7 +3,6 @@ package net.ME1312.SubData.Server.Protocol.Internal;
 import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.DataProtocol;
-import net.ME1312.SubData.Server.DataServer;
 import net.ME1312.SubData.Server.Library.EscapedOutputStream;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Protocol.MessageOut;
@@ -11,8 +10,6 @@ import net.ME1312.SubData.Server.Protocol.MessageStreamOut;
 import net.ME1312.SubData.Server.Protocol.PacketStreamOut;
 import net.ME1312.SubData.Server.SubDataClient;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;

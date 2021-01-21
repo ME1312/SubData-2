@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import static net.ME1312.SubData.Client.Library.ConnectionState.POST_INITIALIZATION;
-import static net.ME1312.SubData.Client.Library.ConnectionState.READY;
 
 /**
  * Initial Packet for Verifying State Class

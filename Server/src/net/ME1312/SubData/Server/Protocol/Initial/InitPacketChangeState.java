@@ -2,7 +2,6 @@ package net.ME1312.SubData.Server.Protocol.Initial;
 
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Library.ConnectionState;
-import net.ME1312.SubData.Server.Library.DisconnectReason;
 import net.ME1312.SubData.Server.Protocol.PacketIn;
 import net.ME1312.SubData.Server.Protocol.PacketOut;
 import net.ME1312.SubData.Server.SubDataClient;
@@ -11,7 +10,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Timer;
 
-import static net.ME1312.SubData.Server.Library.ConnectionState.*;
+import static net.ME1312.SubData.Server.Library.ConnectionState.INITIALIZATION;
+import static net.ME1312.SubData.Server.Library.ConnectionState.POST_INITIALIZATION;
 
 /**
  * Initial Packet for Changing States Class

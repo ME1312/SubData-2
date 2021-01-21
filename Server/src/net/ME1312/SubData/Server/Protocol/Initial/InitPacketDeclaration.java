@@ -21,6 +21,6 @@ public final class InitPacketDeclaration implements InitialProtocol.Packet, Pack
 
     @Override
     public int version() {
-        return 0x0003;
+        return 0x0004;
     }
 }

@@ -11,11 +11,16 @@ import net.ME1312.SubData.Server.Library.DisconnectReason;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Server.Protocol.Initial.InitPacketDeclaration;
 
-import java.awt.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 /**

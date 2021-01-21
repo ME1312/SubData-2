@@ -4,14 +4,15 @@ import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container.ContainedPair;
 import net.ME1312.Galaxi.Library.Container.Container;
-import net.ME1312.Galaxi.Library.Container.Value;
-import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Container.Pair;
+import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.*;
-import net.ME1312.SubData.Client.Library.Exception.*;
-import net.ME1312.SubData.Client.Library.PingResponse;
+import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
+import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
+import net.ME1312.SubData.Client.Library.Exception.IllegalPacketException;
+import net.ME1312.SubData.Client.Library.Exception.IllegalSenderException;
 import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Client.Protocol.Initial.InitialPacket;
@@ -67,7 +68,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
         this.socket = new Socket(address, port);
         this.in = new InputStreamL1(new BufferedInputStream(socket.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED));
         this.out = new OutputStreamL1(log, socket.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED));
-        this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataClient::Data_Writer(" + socket.getLocalSocketAddress() + ")"));
+        this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataClient::Data_Writer(" + socket.getLocalSocketAddress() + ')'));
         this.statequeue = new HashMap<>();
         this.constructor = new Object[]{
                 scheduler,
@@ -76,16 +77,20 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 port,
                 login
         };
-        heartbeat = new Timer();
+        heartbeat = new Timer("SubDataServer::Connection_Heartbeat(" + address.toString() + ')');
         heartbeat.schedule(new TimerTask() {
             @Override
             public void run() {
-                writer.submit(() -> {
+                if (!writer.isShutdown()) writer.submit(() -> {
                     if (heartbeat != null) {
                         out.control('\u0000');
-                        heartbeat.cancel();
-                        heartbeat = new Timer();
-                        heartbeat.schedule(this, 5000);
+                        TimerTask action = this;
+                        heartbeat.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                action.run();
+                            }
+                        }, 5000);
                     }
                 });
             }
@@ -97,7 +102,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
     private void read(SubDataSender sender, Container<Boolean> reset, InputStream data) {
         try {
-            // Step 4 // Read the Packet Metadata
+            // Step 3 // Read the Packet Metadata
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
             int id = -1, version = -1;
 
@@ -117,13 +122,39 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 }
             }
 
+            // Step 4 // Create a detached data forwarding InputStream
             if (state != CLOSED && id >= 0 && version >= 0) {
                 Container<Boolean> open = new Container<>(true);
+                InputStream forward = new InputStream() {
+                    @Override
+                    public int read(byte[] b, int off, int len) throws IOException {
+                        if (open.value) {
+                            int i = data.read(b, off, len);
+                            if (i == -1) close();
+                            return i;
+                        } return -1;
+                    }
+
+                    @Override
+                    public int read() throws IOException {
+                        if (open.value) {
+                            int b = data.read();
+                            if (b == -1) close();
+                            return b;
+                        } else return -1;
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                        open.value = false;
+                        while (data.read() != -1);
+                    }
+                };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
                     DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), log);
                     close(PROTOCOL_MISMATCH);
                 } else if (state == CLOSING && id != 0xFFFE) {
-                    data.close(); // Suppress other packets during the CLOSING stage
+                    forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
@@ -137,18 +168,18 @@ public class SubDataClient extends DataClient implements SubDataSender {
                         DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), log);
                         close(PROTOCOL_MISMATCH);
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
-                        data.close(); // Suppress other packets during the CLOSING stage
+                        forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
                         scheduler.run(() -> {
                             try {
                                 packet.receive(sender);
 
                                 if (packet instanceof PacketStreamIn) {
-                                    ((PacketStreamIn) packet).receive(sender, data);
-                                } else data.close();
+                                    ((PacketStreamIn) packet).receive(sender, forward);
+                                } else forward.close();
                             } catch (Throwable e) {
                                 DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), log);
-                                Util.isException(data::close);
+                                Util.isException(forward::close);
 
                                 if (state.asInt() <= INITIALIZATION.asInt())
                                     Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
@@ -173,8 +204,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
         if (!isClosed()) new Thread(() -> {
             Container<Boolean> reset = new Container<>(false);
             if (!isClosed()) try {
-                // Step 1 // Create a detached data forwarding InputStream
-                // Step 2 // Parse Escapes in the Encrypted Data
+                // Step 1 // Parse Escapes in the Encrypted Data
                 InputStream raw = in.open(() -> {
                     if (state != PRE_INITIALIZATION) reset.value = true;
                 }, () -> {
@@ -187,7 +217,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 PipedOutputStream forward = new PipedOutputStream(data);
                 (read = new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')')).start();
 
-                // Step 3 // Decrypt the Data
+                // Step 2 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
                 forward.close();
 
@@ -302,7 +332,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 sendPacketLater(packet, (packet instanceof InitialPacket)?POST_INITIALIZATION:READY);
             } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
                 sendPacketLater(packet, READY);
-            } else {
+            } else if (!writer.isShutdown()) {
                 writer.submit(() -> write(packet));
             }
         }

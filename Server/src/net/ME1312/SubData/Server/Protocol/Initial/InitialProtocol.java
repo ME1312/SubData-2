@@ -1,8 +1,8 @@
 package net.ME1312.SubData.Server.Protocol.Initial;
 
-import net.ME1312.SubData.Server.Protocol.Internal.PacketNull;
 import net.ME1312.SubData.Server.Protocol.Internal.PacketDisconnect;
 import net.ME1312.SubData.Server.Protocol.Internal.PacketDisconnectUnderstood;
+import net.ME1312.SubData.Server.Protocol.Internal.PacketNull;
 import net.ME1312.SubData.Server.Protocol.PacketIn;
 import net.ME1312.SubData.Server.Protocol.PacketOut;
 
