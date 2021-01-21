@@ -24,6 +24,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 import static net.ME1312.SubData.Server.Library.DisconnectReason.*;
@@ -35,22 +37,19 @@ public class SubDataClient extends DataClient {
     private Socket socket;
     private InetSocketAddress address;
     private ClientHandler handler;
-    private LinkedList<PacketOut> queue;
-    private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
-    private BufferedInputStream in;
+    private InputStreamL1 in;
     private OutputStreamL1 out;
+    private ExecutorService writer;
+    private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
     private Thread read;
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
     private SubDataServer subdata;
-    private Value<Long> bs;
+    private int bs;
     private SubDataClient next;
     private ConnectionState state;
     private DisconnectReason isdcr;
-    private Timer heartbeat;
-    private PacketNull beat;
-    private byte beats = -1;
-    private Timer timeout;
+    private Timer timeout, heartbeat;
     private Object asr;
 
     SubDataClient(SubDataServer subdata, Socket client) throws IOException {
@@ -59,41 +58,41 @@ public class SubDataClient extends DataClient {
         this.bs = subdata.protocol.bs;
         state = PRE_INITIALIZATION;
         socket = client;
-        in = new BufferedInputStream(client.getInputStream(), (bs.value() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.value().intValue());
-        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs.value());
-        queue = null;
+        in = new InputStreamL1(new BufferedInputStream(client.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED));
+        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED));
+        writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ")"));
         statequeue = new HashMap<>();
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
         isdcr = PROTOCOL_MISMATCH;
-        heartbeat = new Timer("SubDataServer::Connection_Heartbeat(" + address.toString() + ')');
-        heartbeat.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (beats != -1 && (beat == null || beat.sent)) {
-                    ++beats;
-                    if (beats >= 5) {
-                        sendPacket(beat = new PacketNull());
-                    }
-                }
-            }
-        }, 1000, 1000);
         Timer timeout = this.timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
         timeout.schedule(new TimerTask() {
             @Override
             public void run() {
-                if (state.asInt() < POST_INITIALIZATION.asInt()) try {
+                if (state.asInt() < POST_INITIALIZATION.asInt()) {
                     close(INITIALIZATION_TIMEOUT);
-                } catch (IOException e) {
-                    DebugUtil.logException(e, subdata.log);
                 }
                 timeout.cancel();
             }
         }, subdata.timeout.value());
+        heartbeat = new Timer();
+        heartbeat.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                writer.submit(() -> {
+                    if (heartbeat != null) {
+                        out.control('\u0000');
+                        heartbeat.cancel();
+                        heartbeat = new Timer();
+                        heartbeat.schedule(this, 5000);
+                    }
+                });
+            }
+        }, 5000);
     }
 
-    private void read(Container<Boolean> reset, InputStream stream) {
+    private void read(Container<Boolean> reset, InputStream data) {
         try {
-            BufferedInputStream data = new BufferedInputStream(stream, (bs.value() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : bs.value().intValue());
+            // Step 4 // Read the Packet Metadata
             ByteArrayOutputStream pending = new ByteArrayOutputStream();
             int id = -1, version = -1;
 
@@ -113,31 +112,13 @@ public class SubDataClient extends DataClient {
                 }
             }
 
-            // Step 4 // Create a detached data forwarding InputStream
-            if (beats != -1) beats = 0;
             if (state != CLOSED && id >= 0 && version >= 0) {
                 Container<Boolean> open = new Container<>(true);
-                InputStream forward = new InputStream() {
-                    @Override
-                    public int read() throws IOException {
-                        if (open.value) {
-                            int b = data.read();
-                            if (b < 0) close();
-                            return b;
-                        } else return -1;
-                    }
-
-                    @Override
-                    public void close() throws IOException {
-                        open.value = false;
-                        while (data.read() != -1);
-                    }
-                };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
                     DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), subdata.log);
                     close(PROTOCOL_MISMATCH);
                 } else if (state == CLOSING && id != 0xFFFE) {
-                    forward.close(); // Suppress other packets during the CLOSING stage
+                    data.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
@@ -149,18 +130,18 @@ public class SubDataClient extends DataClient {
                         DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), subdata.log);
                         close(PROTOCOL_MISMATCH);
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
-                        forward.close(); // Suppress other packets during the CLOSING stage
+                        data.close(); // Suppress other packets during the CLOSING stage
                     } else {
                         subdata.scheduler.run(() -> {
                             try {
                                 packet.receive(this);
 
                                 if (packet instanceof PacketStreamIn) {
-                                    ((PacketStreamIn) packet).receive(this, forward);
-                                } else forward.close();
+                                    ((PacketStreamIn) packet).receive(this, data);
+                                } else data.close();
                             } catch (Throwable e) {
                                 DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), subdata.log);
-                                Util.isException(forward::close);
+                                Util.isException(data::close);
 
                                 if (state.asInt() <= INITIALIZATION.asInt())
                                     Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
@@ -172,24 +153,22 @@ public class SubDataClient extends DataClient {
             }
         } catch (InterruptedIOException e) {
         } catch (Exception e) {
-            if (!reset.value) try {
+            if (!reset.value) {
                 if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
                     DebugUtil.logException(e, subdata.log);
                 } if (!(e instanceof SocketException)) {
                     close(UNHANDLED_EXCEPTION);
                 } else close(CONNECTION_INTERRUPTED);
-            } catch (IOException e1) {
-                e1.printStackTrace();
             }
         }
-        if (beats != -1) beats = 0;
     }
     void read() {
         if (!isClosed()) new Thread(() -> {
             Container<Boolean> reset = new Container<>(false);
             if (!isClosed()) try {
-                // Step 1 // Parse Escapes in the Encrypted Data
-                InputStream raw = new InputStreamL1(in, () -> {
+                // Step 1 // Create a detached data forwarding InputStream
+                // Step 2 // Parse Escapes in the Encrypted Data
+                InputStream raw = in.open(() -> {
                     if (state != PRE_INITIALIZATION) reset.value = true;
                 }, () -> {
                     if (!isClosed()) {
@@ -199,16 +178,14 @@ public class SubDataClient extends DataClient {
                 
                 PipedInputStream data = new PipedInputStream(1024);
                 PipedOutputStream forward = new PipedOutputStream(data);
-
-                // Step 3 // Parse the SubData Packet Formatting
                 (read = new Thread(() -> read(reset, data), "SubDataServer::Packet_Listener(" + address.toString() + ')')).start();
 
-                // Step 2 // Decrypt the Data
+                // Step 3 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
                 forward.close();
 
             } catch (Exception e) {
-                if (!reset.value) try {
+                if (!reset.value) {
                     if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
                         DebugUtil.logException(e, subdata.log);
                     } if (!(e instanceof SocketException)) {
@@ -216,8 +193,6 @@ public class SubDataClient extends DataClient {
                             close(ENCRYPTION_MISMATCH);  // Classes that extend EncryptionException being thrown signify an ENCRYPTION_MISMATCH
                         else close(UNHANDLED_EXCEPTION);
                     } else close(CONNECTION_INTERRUPTED);
-                } catch (IOException e1) {
-                    e1.printStackTrace();
                 }
             }
         }, "SubDataServer::Data_Listener(" + address.toString() + ')').start();
@@ -225,10 +200,14 @@ public class SubDataClient extends DataClient {
 
     private void write(PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
-        if (beats != -1) beats = 0;
         try {
             Container<Boolean> open = new Container<Boolean>(true);
             OutputStream forward = new OutputStream() {
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException {
+                    if (open.value) data.write(b, off, len);
+                }
+
                 @Override
                 public void write(int b) throws IOException {
                     if (open.value) data.write(b);
@@ -237,7 +216,7 @@ public class SubDataClient extends DataClient {
                 @Override
                 public void close() throws IOException {
                     open.value = false;
-                    Util.isException(data::close);
+                    data.close();
                 }
             };
             // Step 2 // Write the Packet Metadata
@@ -252,11 +231,11 @@ public class SubDataClient extends DataClient {
             // Step 3 // Invoke the Packet
             subdata.scheduler.run(() -> {
                 try {
-                    next.sending(this);
-
                     if (next instanceof PacketStreamOut) {
                         ((PacketStreamOut) next).send(this, forward);
                     } else forward.close();
+
+                    next.sending(this);
                 } catch (Throwable e) {
                     DebugUtil.logException(e, subdata.log);
                     Util.isException(forward::close);
@@ -267,71 +246,36 @@ public class SubDataClient extends DataClient {
             DebugUtil.logException(e, subdata.log);
             Util.isException(data::close);
         }
-        if (beats != -1) beats = 0;
     }
-    void write() {
-        if (queue != null) new Thread(() -> {
-            if (queue.size() > 0) {
-                try {
-                    PacketOut next = Util.getDespiteException(() -> queue.get(0), null);
-                    Util.isException(() -> queue.remove(0));
-                    if (next != null) {
-                        if (!isClosed() || !(next instanceof PacketDisconnect || next instanceof PacketDisconnectUnderstood)) { // Disallows Disconnect packets during CLOSED
-                            if (!isClosed() && (state != CLOSING || next instanceof PacketDisconnect || next instanceof PacketDisconnectUnderstood)) { // Allows only Disconnect packets during CLOSING
-                                PipedOutputStream data = new PipedOutputStream();
-                                PipedInputStream forward = new PipedInputStream(data, 1024);
-                                new Thread(() -> write(next, data), "SubDataServer::Packet_Writer(" + address.toString() + ')').start();
+    void write(PacketOut packet) {
+        if (packet != null) {
+            if (!isClosed() || !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) { // Disallows Disconnect packets during CLOSED
+                if (!isClosed() && (state != CLOSING || packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood)) { // Allows only Disconnect packets during CLOSING
+                    try {
+                        PipedOutputStream data = new PipedOutputStream();
+                        PipedInputStream forward = new PipedInputStream(data, 1024);
+                        new Thread(() -> write(packet, data), "SubDataServer::Packet_Writer(" + address.toString() + ')').start();
 
-                                // Step 5 // Add Escapes to the Encrypted Data
-                                OutputStream raw = new OutputStream() {
-                                    boolean open = true;
+                        // Step 4 // Encrypt the Data
+                        cipher.encrypt(this, forward, out);
+                        forward.close();
 
-                                    @Override
-                                    public void write(int b) throws IOException {
-                                        if (open) {
-                                            try {
-                                                out.write(b);
-                                            } catch (Throwable e) {
-                                                close();
-                                            }
-                                        }
-                                    }
-
-                                    @Override
-                                    public void close() throws IOException {
-                                        if (open) {
-                                            open = false;
-                                            if (!socket.isClosed()) {
-                                                out.control('\u0017');
-                                                out.flush();
-                                                if (queue != null && queue.size() > 0) SubDataClient.this.write();
-                                                else queue = null;
-                                            }
-                                        }
-                                    }
-                                };
-
-                                // Step 4 // Encrypt the Data
-                                cipher.encrypt(this, forward, raw);
-                                raw.close();
-                                forward.close();
-                            } else {
-                                // Re-queue any pending packets during the CLOSING state
-                                sendPacket(next);
-                            }
+                        // Step 5 // Add Escapes to the Encrypted Data
+                        if (!socket.isClosed()) {
+                            out.flush();
+                            out.control('\u0017');
+                        }
+                    } catch (Throwable e) {
+                        if (!(e instanceof SocketException)) {
+                            DebugUtil.logException(e, subdata.log);
                         }
                     }
-                } catch (Throwable e) {
-                    Util.isException(() -> queue.remove(0));
-                    if (!(e instanceof SocketException)) { // Cut the write session short when socket issues occur
-                        DebugUtil.logException(e, subdata.log);
-
-                        if (queue != null && queue.size() > 0) SubDataClient.this.write();
-                        else queue = null;
-                    } else queue = null;
+                } else {
+                    // Re-queue any pending packets during the CLOSING state
+                    sendPacket(packet);
                 }
-            } else queue = null;
-        }, "SubDataServer::Data_Writer(" + address.toString() + ')').start();
+            }
+        }
     }
 
     /**
@@ -340,8 +284,6 @@ public class SubDataClient extends DataClient {
      * @param packets Packets to send
      */
     public synchronized void sendPacket(PacketOut... packets) {
-        List<PacketOut> list = new ArrayList<>();
-
         for (PacketOut packet : packets) {
             if (Util.isNull(packet)) throw new NullPointerException();
             if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
@@ -352,20 +294,8 @@ public class SubDataClient extends DataClient {
             } else if (state == POST_INITIALIZATION && !(packet instanceof InitialPacket)) {
                 sendPacketLater(packet, READY);
             } else {
-                list.add(packet);
+                writer.submit(() -> write(packet));
             }
-        }
-
-        if (list.size() > 0) {
-            boolean init = false;
-
-            if (queue == null) {
-                queue = new LinkedList<>();
-                init = true;
-            }
-            queue.addAll(list);
-
-            if (init) write();
         }
     }
     private void sendPacketLater(PacketOut packet, ConnectionState state) {
@@ -416,8 +346,8 @@ public class SubDataClient extends DataClient {
      *
      * @return Block Size
      */
-    public long getBlockSize() {
-        return bs.value();
+    public int getBlockSize() {
+        return bs;
     }
 
     /**
@@ -425,10 +355,11 @@ public class SubDataClient extends DataClient {
      *
      * @param size Block Size (null for super)
      */
-    public void setBlockSize(Long size) {
+    public void setBlockSize(Integer size) {
         if (size == null) {
             bs = subdata.protocol.bs;
-        } else bs = new Container<>(size);
+        } else bs = size;
+        out.resize(bs);
     }
 
     public Object getAuthResponse() {
@@ -481,7 +412,7 @@ public class SubDataClient extends DataClient {
         }
     }
 
-    public void close() throws IOException {
+    public void close() {
         if (state.asInt() < CLOSING.asInt() && !socket.isClosed()) {
             boolean result = true;
             LinkedList<ReturnCallback<DataClient, Boolean>> events = new LinkedList<>(on.close);
@@ -492,7 +423,6 @@ public class SubDataClient extends DataClient {
             }
 
             if (result) {
-                beats = -1;
                 state = CLOSING;
                 if (!isClosed()) sendPacket(new PacketDisconnect());
 
@@ -500,31 +430,35 @@ public class SubDataClient extends DataClient {
                 timeout.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        if (!socket.isClosed()) try {
-                            close(CLOSE_REQUESTED);
-                        } catch (IOException e) {
-                            DebugUtil.logException(e, subdata.log);
-                        }
+                        close(CLOSE_REQUESTED);
                     }
                 }, 5000);
             }
         }
     }
-    void close(DisconnectReason reason) throws IOException {
+    void close(DisconnectReason reason) {
         if (state != CLOSED) {
             if (state == CLOSING && reason == CONNECTION_INTERRUPTED) reason = CLOSE_REQUESTED;
             else if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
 
             state = CLOSED;
             timeout.cancel();
-            heartbeat.cancel();
             if (read != null) read.interrupt();
             if (reason != CLOSE_REQUESTED) {
                 subdata.log.warning(getAddress().toString() + " has disconnected: " + reason);
             } else subdata.log.info(getAddress().toString() + " has disconnected");
-            cipher.retire(this);
 
-            if (!socket.isClosed()) getSocket().close();
+            heartbeat.cancel();
+            heartbeat = null;
+            writer.shutdown();
+            out.shutdown();
+            in.shutdown();
+            try {
+                socket.close();
+            } catch (IOException e) {
+                DebugUtil.logException(e, subdata.log);
+            }
+            cipher.retire(this);
             if (handler != null) {
                 ClientHandler tmp = handler;
                 setHandler(null);

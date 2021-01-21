@@ -34,7 +34,7 @@ public class SubDataProtocol extends DataProtocol {
     final HashMap<Integer, PacketIn> pIn = new HashMap<Integer, PacketIn>();
     ArrayList<Version> version = new ArrayList<Version>();
     String name;
-    Value<Long> bs = new Container<>((long) DataSize.MB);
+    int bs = DataSize.KBB;
 
     /**
      * Create a new Protocol
@@ -180,8 +180,8 @@ public class SubDataProtocol extends DataProtocol {
      *
      * @return Block Size
      */
-    public long getBlockSize() {
-        return bs.value();
+    public int getBlockSize() {
+        return bs;
     }
 
     /**
@@ -189,8 +189,8 @@ public class SubDataProtocol extends DataProtocol {
      *
      * @param size Block Size
      */
-    public void setBlockSize(long size) {
-        bs.value(size);
+    public void setBlockSize(int size) {
+        bs = size;
     }
 
     /**

@@ -41,7 +41,6 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
 
                 OutputStreamL1 out = Util.reflect(SubDataClient.class.getDeclaredField("out"), sender.getConnection());
                 out.control('\u0018');
-                out.flush();
                 sender.sendPacket(this);
             } else {
                 DebugUtil.logException(new EncryptionException("Unknown encryption type \"" + cipher + '\"' + ((i <= 0)?"":" in \"" + last + '\"')), Util.reflect(SubDataClient.class.getDeclaredField("log"), sender.getConnection()));

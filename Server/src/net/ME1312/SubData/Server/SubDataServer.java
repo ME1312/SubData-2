@@ -107,7 +107,7 @@ public class SubDataServer extends DataServer {
      */
     public void setTimeout(Long size) {
         if (size == null) {
-            timeout = protocol.bs;
+            timeout = protocol.timeout;
         } else timeout = new Container<>(size);
     }
 
@@ -168,12 +168,12 @@ public class SubDataServer extends DataServer {
         return new HashMap<>(clients);
     }
 
-    public void removeClient(DataClient client) throws IOException {
+    public void removeClient(DataClient client) {
         if (Util.isNull(client)) throw new NullPointerException();
         removeClient(client.getID());
     }
 
-    public void removeClient(UUID id) throws IOException {
+    public void removeClient(UUID id) {
         if (Util.isNull(id)) throw new NullPointerException();
         if (clients.keySet().contains(id)) {
             SubDataClient client = clients.get(id);

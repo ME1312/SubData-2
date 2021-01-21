@@ -2,7 +2,6 @@ package net.ME1312.SubData.Server.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Library.ConnectionState;
-import net.ME1312.SubData.Server.Protocol.Initial.InitialPacket;
 import net.ME1312.SubData.Server.Protocol.Initial.InitialProtocol;
 import net.ME1312.SubData.Server.Protocol.PacketIn;
 import net.ME1312.SubData.Server.Protocol.PacketOut;
@@ -14,7 +13,6 @@ import net.ME1312.SubData.Server.SubDataClient;
 public final class PacketDisconnect implements InitialProtocol.Packet, PacketIn, PacketOut {
     @Override
     public void receive(SubDataClient client) throws Throwable {
-        Util.reflect(SubDataClient.class.getDeclaredField("beats"), client, (byte) -1);
         Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.CLOSING);
         client.sendPacket(new PacketDisconnectUnderstood());
     }

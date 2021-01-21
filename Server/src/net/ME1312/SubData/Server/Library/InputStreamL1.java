@@ -1,7 +1,5 @@
 package net.ME1312.SubData.Server.Library;
 
-import net.ME1312.SubData.Server.Library.Exception.EndOfStreamException;
-
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -10,106 +8,121 @@ import static net.ME1312.SubData.Server.Library.DataSize.*;
 /**
  * SubData Layer 1 InputStream Class
  */
-public class InputStreamL1 extends InputStream {
-    private final Runnable reset, close;
-    private final Skip skip = new Skip();
-    private final InputStream raw, control, escaped, closed;
-    private InputStream redirect;
-    private boolean open = true;
+public class InputStreamL1 {
+    private final Runnable shutdown;
+    private final InputStream in;
+    private Runnable reset, close;
+    private DataInterface open;
 
-    private class Skip extends InputStream {
-        private long max, i;
+    public InputStreamL1(InputStream in, Runnable shutdown) {
+        this.in = in;
+        this.shutdown = shutdown;
+    }
 
-        private int start(long amount) throws IOException {
-            i = 0;
-            max = amount;
-            redirect = skip;
-            return read();
+    public InputStream open(Runnable reset, Runnable close) {
+        if (open != null) open.shutdown();
+        this.reset = reset;
+        this.close = close;
+        return open = new DataInterface();
+    }
+
+    private final class DataInterface extends InputStream {
+        private int permitted = 0;
+
+        @Override
+        public int read(byte[] data, int offset, int length) throws IOException {
+            if (offset < 0 || length < 0 || length > data.length - offset) {
+                throw new IndexOutOfBoundsException();
+            }
+
+            if (open == this) {
+                int total = 0;
+                int transferred;
+                do {
+                    total += transferred = in.read(data, offset, Math.min(length, permitted));
+                    if (transferred == -1) {
+                        shutdown.run();
+                        break;
+                    }
+                    permitted -= transferred;
+                    if (transferred == length) break;
+                    if (permit()) break;
+                    offset += transferred;
+                    length -= transferred;
+                } while (true);
+                return total;
+            } else return -1;
         }
 
         @Override
         public int read() throws IOException {
-            if (++i >= max) redirect = control;
-            return raw.read();
+            do {
+                if (permitted != 0) {
+                    int b = in.read();
+                    if (b == -1) {
+                        shutdown.run();
+                        return -1;
+                    } else {
+                        --permitted;
+                        return b;
+                    }
+                } else {
+                    if (permit()) return -1;
+                }
+            } while (true);
+        }
+
+        @Override
+        public void close() throws IOException {
+            while (read() != -1);
+        }
+
+        private void shutdown() {
+            open = null;
+            permitted = 0;
+        }
+
+        private boolean permit() throws IOException {
+            if (open == this) {
+                int b = in.read();
+                do {
+                    switch (b) {
+                     /* case '\u0014': // [DC4] Raw GB Block(s) of Data
+                            permitted = (in.read() + 1) * GBB; // Impossible with 32-bit signed int :(
+                            return false; */
+                        case '\u0013': // [DC3] Raw MB Block(s) of Data
+                            permitted = (in.read() + 1) * MBB;
+                            return false;
+                        case '\u0012': // [DC2] Raw KB Block(s) of Data
+                            permitted = (in.read() + 1) * KBB;
+                            return false;
+                        case '\u0011': // [DC1] Raw Byte Block(s) of Data
+                            permitted = (in.read() + 1) *  BB;
+                            return false;
+                        case '\u0010': // [DLE] Raw Byte of Data
+                            permitted = 1;
+                            return false;
+                        case '\u0018': // [CAN] Read Reset
+                            reset.run();
+                            return true;
+                        case '\u0017': // [ETB] End of Packet
+                            shutdown();
+                            close.run();
+                            return true;
+                        case -1:
+                            shutdown.run();
+                            return true;
+                    }
+
+                    b = in.read();
+                } while (true);
+            } else return true;
         }
     }
 
-    public InputStreamL1(InputStream stream, Runnable reset, Runnable close) {
-        this.reset = reset;
-        this.close = close;
-        this.raw = stream;
-        this.control = redirect = new InputStream() {
-            @Override
-            public int read() throws IOException {
-                int b = raw.read();
-
-                switch (b) {
-                    case '\u0014': // [DC4] Raw GB(s) of Data
-                        return skip.start((raw.read() + 1) * GBB);
-                    case '\u0013': // [DC3] Raw MB(s) of Data
-                        return skip.start((raw.read() + 1) * MBB);
-                    case '\u0012': // [DC2] Raw KB(s) of Data
-                        return skip.start((raw.read() + 1) * KBB);
-                    case '\u0011': // [DC1] Raw Byte(s) of Data
-                        return skip.start((raw.read() + 1) *  BB);
-                    case '\u0010': // [DLE] Escaped Data
-                        return (redirect = escaped).read();
-                    case '\u0018': // [CAN] Read Reset
-                        reset.run();
-                    case '\u0017': // [ETB] End of Packet
-                        InputStreamL1.this.close();
-                        return -1;
-                    case -1:
-                        InputStreamL1.this.close();
-                        throw new EndOfStreamException();
-                    default:
-                        return b;
-                }
-            }
-        };
-        this.escaped = new InputStream() {
-            Integer pending = null;
-
-            @Override
-            public int read() throws IOException {
-                int b = (pending != null)?pending:raw.read();
-                pending = null;
-
-                if (b == -1) {
-                    InputStreamL1.this.close();
-                    throw new EndOfStreamException();
-                } else if (b == '\u0010') {
-                    int next = raw.read();
-                    if (next == '\u0010') {        // [DLE] (Escape)
-                        /* no action necessary */
-                    } else if (next == '\u0017') { // [ETB] (End of Data)
-                        b = (redirect = control).read();
-                    } else {
-                        pending = next;
-                    }
-                }
-                return b;
-            }
-        };
-        this.closed = new InputStream() {
-            @Override
-            public int read() throws IOException {
-                return -1;
-            }
-        };
-    }
-
-    @Override
-    public int read() throws IOException {
-        return redirect.read();
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (open) {
-            open = false;
-            redirect = closed;
-            close.run();
+    public void shutdown() {
+        if (open != null) {
+            open.shutdown();
         }
     }
 }

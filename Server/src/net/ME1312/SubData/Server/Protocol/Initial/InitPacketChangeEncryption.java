@@ -58,7 +58,6 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
             Util.reflect(SubDataClient.class.getDeclaredField("cipherlevel"), client, level);
             OutputStreamL1 out = Util.reflect(SubDataClient.class.getDeclaredField("out"), client);
             out.control('\u0018');
-            out.flush();
             String cipher = Util.reflect(SubDataServer.class.getDeclaredField("cipher"), client.getServer());
             if (level < ((cipher.contains("/"))?cipher.split("/"):new String[]{cipher}).length) {
                 client.sendPacket(this);

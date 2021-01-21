@@ -26,10 +26,9 @@ public interface InitialPacket {
      * Change the state of a Client to READY
      *
      * @param client Client
-     * @param flush Flushes the Packet Queue (do not flush within a .send())
      * @throws Throwable
      */
-    default void setReady(SubDataClient client, boolean flush) throws Throwable {
+    default void setReady(SubDataClient client) throws Throwable {
         if (Util.<ConnectionState>reflect(SubDataClient.class.getDeclaredField("state"), client).asInt() < READY.asInt()) {
             Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.READY);
 
@@ -38,8 +37,7 @@ public interface InitialPacket {
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
             if (queue.keySet().contains(READY)) {
                 if (queue.get(READY).size() > 0) {
-                    Util.reflect(SubDataClient.class.getDeclaredField("queue"), client, queue.get(READY));
-                    if (flush) Util.reflect(SubDataClient.class.getDeclaredMethod("write"), client);
+                    client.sendPacket(queue.get(READY).toArray(new PacketOut[0]));
                 }
                 queue.remove(READY);
             }

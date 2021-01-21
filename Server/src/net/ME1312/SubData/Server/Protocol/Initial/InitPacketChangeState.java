@@ -32,7 +32,7 @@ public final class InitPacketChangeState implements InitialProtocol.Packet, Pack
             Util.<Timer>reflect(SubDataClient.class.getDeclaredField("timeout"), client).cancel();
             client.sendPacket(new InitPacketVerifyState());
         } else if (Util.reflect(SubDataClient.class.getDeclaredField("state"), client) == POST_INITIALIZATION) {
-            setReady(client, true);
+            setReady(client);
         }
     }
 

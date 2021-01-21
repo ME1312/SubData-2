@@ -21,7 +21,7 @@ public final class InitPacketChangeState implements InitialProtocol.Packet, Pack
             Util.reflect(SubDataClient.class.getDeclaredField("isdcr"), sender.getConnection(), null);
             Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection(), POST_INITIALIZATION);
         } else if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == POST_INITIALIZATION) {
-            setReady(sender.getConnection(), false);
+            setReady(sender.getConnection());
         }
     }
 
