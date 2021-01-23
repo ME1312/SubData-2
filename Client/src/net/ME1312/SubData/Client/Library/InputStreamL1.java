@@ -32,17 +32,23 @@ public class InputStreamL1 {
         @Override
         public int read(byte[] data, int offset, int length) throws IOException {
             if (open == this) {
-                int total = 0;
-                int transferred;
+                int transferred, total = 0;
                 do {
-                    total += transferred = in.read(data, offset, Math.min(length, permitted));
+                    transferred = in.read(data, offset, Math.min(length, permitted));
                     if (transferred == -1) {
                         shutdown.run();
+                        if (total == 0) return -1;
                         break;
                     }
+                    total += transferred;
                     permitted -= transferred;
-                    if (transferred == length) break;
-                    if (permit()) break;
+                    if (transferred == length) {
+                        break;
+                    }
+                    if (permit()) {
+                        if (total == 0) return -1;
+                        break;
+                    }
                     offset += transferred;
                     length -= transferred;
                 } while (true);
@@ -63,7 +69,8 @@ public class InputStreamL1 {
                         return b;
                     }
                 } else {
-                    if (permit()) return -1;
+                    if (permit())
+                        return -1;
                 }
             } while (true);
         }

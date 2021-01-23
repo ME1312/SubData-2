@@ -128,26 +128,25 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 InputStream forward = new InputStream() {
                     @Override
                     public int read(byte[] b, int off, int len) throws IOException {
-                        if (open.value) {
-                            int i = data.read(b, off, len);
-                            if (i == -1) close();
-                            return i;
-                        } return -1;
+                        int i = data.read(b, off, len);
+                        if (i == -1) open.value = false;
+                        return i;
                     }
 
                     @Override
                     public int read() throws IOException {
-                        if (open.value) {
-                            int b = data.read();
-                            if (b == -1) close();
-                            return b;
-                        } else return -1;
+                        int b = data.read();
+                        if (b == -1) open.value = false;
+                        return b;
                     }
 
                     @Override
                     public void close() throws IOException {
-                        open.value = false;
-                        while (data.read() != -1);
+                        try {
+                            while (data.read() != -1);
+                        } finally {
+                            open.value = false;
+                        }
                     }
                 };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
@@ -242,12 +241,12 @@ public class SubDataClient extends DataClient implements SubDataSender {
             OutputStream forward = new OutputStream() {
                 @Override
                 public void write(byte[] b, int off, int len) throws IOException {
-                    if (open.value) data.write(b, off, len);
+                    data.write(b, off, len);
                 }
 
                 @Override
                 public void write(int b) throws IOException {
-                    if (open.value) data.write(b);
+                    data.write(b);
                 }
 
                 @Override
