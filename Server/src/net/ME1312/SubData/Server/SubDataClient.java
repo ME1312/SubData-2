@@ -57,11 +57,14 @@ public class SubDataClient extends DataClient {
         this.bs = subdata.protocol.bs;
         state = PRE_INITIALIZATION;
         socket = client;
-        in = new InputStreamL1(new BufferedInputStream(client.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED));
-        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED));
-        writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ')'));
-        statequeue = new HashMap<>();
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
+        writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ')'));
+        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataServer::Block_Writer(" + address.toString() + ')');
+        in = new InputStreamL1(new BufferedInputStream(client.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED), e -> {
+            DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
+            close(PROTOCOL_MISMATCH);
+        });
+        statequeue = new HashMap<>();
         isdcr = PROTOCOL_MISMATCH;
         Timer timeout = this.timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
         timeout.schedule(new TimerTask() {
@@ -205,7 +208,7 @@ public class SubDataClient extends DataClient {
                 
                 PipedInputStream data = new PipedInputStream(1024);
                 PipedOutputStream forward = new PipedOutputStream(data);
-                (read = new Thread(() -> read(reset, data), "SubDataServer::Packet_Listener(" + address.toString() + ')')).start();
+                (read = new Thread(() -> read(reset, data), "SubDataServer::Packet_Reader(" + address.toString() + ')')).start();
 
                 // Step 2 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
@@ -222,7 +225,7 @@ public class SubDataClient extends DataClient {
                     } else close(CONNECTION_INTERRUPTED);
                 }
             }
-        }, "SubDataServer::Data_Listener(" + address.toString() + ')').start();
+        }, "SubDataServer::Data_Reader(" + address.toString() + ')').start();
     }
 
     private void write(PacketOut next, OutputStream data) {

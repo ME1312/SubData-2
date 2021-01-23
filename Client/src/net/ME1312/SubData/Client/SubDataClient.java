@@ -66,9 +66,12 @@ public class SubDataClient extends DataClient implements SubDataSender {
         this.state = PRE_INITIALIZATION;
         this.isdcr = PROTOCOL_MISMATCH;
         this.socket = new Socket(address, port);
-        this.in = new InputStreamL1(new BufferedInputStream(socket.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED));
-        this.out = new OutputStreamL1(log, socket.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED));
         this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataClient::Data_Writer(" + socket.getLocalSocketAddress() + ')'));
+        this.out = new OutputStreamL1(log, socket.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataClient::Block_Writer(" + socket.getLocalSocketAddress().toString() + ')');
+        this.in = new InputStreamL1(new BufferedInputStream(socket.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED), e -> {
+            DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), log);
+            close(PROTOCOL_MISMATCH);
+        });
         this.statequeue = new HashMap<>();
         this.constructor = new Object[]{
                 scheduler,
@@ -214,7 +217,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
                 PipedInputStream data = new PipedInputStream(1024);
                 PipedOutputStream forward = new PipedOutputStream(data);
-                (read = new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Listener(" + socket.getLocalSocketAddress().toString() + ')')).start();
+                (read = new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Reader(" + socket.getLocalSocketAddress().toString() + ')')).start();
 
                 // Step 2 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
@@ -231,7 +234,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     } else close(CONNECTION_INTERRUPTED);
                 }
             }
-        }, "SubDataClient::Data_Listener(" + socket.getLocalSocketAddress().toString() + ')').start();
+        }, "SubDataClient::Data_Reader(" + socket.getLocalSocketAddress().toString() + ')').start();
     }
 
     private void write(SubDataSender sender, PacketOut next, OutputStream data) {

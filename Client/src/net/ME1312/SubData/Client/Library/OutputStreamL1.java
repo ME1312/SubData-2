@@ -13,7 +13,7 @@ import static net.ME1312.SubData.Client.Library.DataSize.*;
  * SubData Layer 1 OutputStream Class
  */
 public class OutputStreamL1 extends OutputStream {
-    private final ExecutorService writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataClient::Block_Writer(" + hashCode() + ")"));
+    private final ExecutorService writer;
     private final Logger log;
     private final Runnable shutdown;
     private final OutputStream out;
@@ -21,7 +21,8 @@ public class OutputStreamL1 extends OutputStream {
     private int cursor = 0;
     private byte[] block;
 
-    public OutputStreamL1(Logger log, OutputStream stream, int limit, Runnable shutdown) {
+    public OutputStreamL1(Logger log, OutputStream stream, int limit, Runnable shutdown, String name) {
+        this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, name));
         this.shutdown = shutdown;
         this.log = log;
         this.out = stream;
