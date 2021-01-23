@@ -40,7 +40,7 @@ public class SubDataClient extends DataClient {
     private OutputStreamL1 out;
     private ExecutorService writer;
     private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
-    private Thread read;
+    private Runnable readc;
     private Cipher cipher = NEH.get();
     private int cipherlevel = 0;
     private SubDataServer subdata;
@@ -163,6 +163,7 @@ public class SubDataClient extends DataClient {
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
+                        readc = () -> open.value = false;
                         subdata.scheduler.run(() -> {
                             try {
                                 packet.receive(this);
@@ -208,7 +209,9 @@ public class SubDataClient extends DataClient {
                 
                 PipedInputStream data = new PipedInputStream(1024);
                 PipedOutputStream forward = new PipedOutputStream(data);
-                (read = new Thread(() -> read(reset, data), "SubDataServer::Packet_Reader(" + address.toString() + ')')).start();
+                Thread reader = new Thread(() -> read(reset, data), "SubDataServer::Packet_Reader(" + address.toString() + ')');
+                readc = reader::interrupt;
+                reader.start();
 
                 // Step 2 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
@@ -473,7 +476,7 @@ public class SubDataClient extends DataClient {
 
             state = CLOSED;
             timeout.cancel();
-            if (read != null) read.interrupt();
+            if (readc != null) readc.run();
             if (reason != CLOSE_REQUESTED) {
                 subdata.log.warning(getAddress().toString() + " has disconnected: " + reason);
             } else subdata.log.info(getAddress().toString() + " has disconnected");

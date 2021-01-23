@@ -17,8 +17,7 @@ public class OutputStreamL1 extends OutputStream {
     private final Logger log;
     private final Runnable shutdown;
     private final OutputStream out;
-    private int limit;
-    private int cursor = 0;
+    private int limit, cursor = 0;
     private byte[] block;
 
     public OutputStreamL1(Logger log, OutputStream stream, int limit, Runnable shutdown, String name) {
@@ -57,6 +56,21 @@ public class OutputStreamL1 extends OutputStream {
         if (cursor == block.length) flush();
     }
 
+    @Override
+    public void flush() {
+        if (cursor != 0 && !writer.isShutdown()) {
+            if (cursor == block.length || limit != block.length) {
+                writer.submit(new DataFlusher(block, cursor)::flush);
+                block = new byte[limit];
+            } else {
+                final byte[] block = new byte[cursor];
+                System.arraycopy(this.block, 0, block, 0, cursor);
+                writer.submit(new DataFlusher(block, cursor)::flush);
+            }
+            cursor = 0;
+        }
+    }
+
     public void control(int b) {
         if (!writer.isShutdown()) writer.submit(() -> {
             try {
@@ -68,16 +82,6 @@ public class OutputStreamL1 extends OutputStream {
                 } else shutdown.run();
             }
         });
-    }
-
-    @Override
-    public void flush() {
-        if (cursor > 0 && !writer.isShutdown()) {
-            final DataFlusher data = new DataFlusher(block, cursor);
-            writer.submit(data::flush);
-            cursor = 0;
-            block = new byte[limit];
-        }
     }
 
     private final class DataFlusher {
@@ -109,44 +113,36 @@ public class OutputStreamL1 extends OutputStream {
             }
         }
         private long flushMBB() throws IOException {
-                int size = Math.min((int) Math.floor((double) stored / MBB), 256);
-                if (size > 0) {
-                    int length = size * MBB;
-                    out.write('\u0013');
-                    out.write((byte) (size - 1));
-                    out.write(block, cursor, length);
-                    cursor += length;
-                    return length;
-                } else return 0;
+            int size = Math.min((int) Math.floor((double) stored / MBB), 256);
+            int length = size * MBB;
+            out.write('\u0013');
+            out.write((byte) (size - 1));
+            out.write(block, cursor, length);
+            cursor += length;
+            return length;
         }
         private long flushKBB() throws IOException {
             int size = Math.min((int) Math.floor((double) stored / KBB), 256);
-            if (size > 0) {
-                int length = size * KBB;
-                out.write('\u0012');
-                out.write((byte) (size - 1));
-                out.write(block, cursor, length);
-                cursor += length;
-                return length;
-            } else return 0;
+            int length = size * KBB;
+            out.write('\u0012');
+            out.write((byte) (size - 1));
+            out.write(block, cursor, length);
+            cursor += length;
+            return length;
         }
         private long flushBB() throws IOException {
             int size = Math.min((int) Math.floor((double) stored /  BB), 256);
-            if (size > 0) {
-                int length = size *  BB;
-                out.write('\u0011');
-                out.write((byte) (size - 1));
-                out.write(block, cursor, length);
-                cursor += length;
-                return length;
-            } else return 0;
+            int length = size *  BB;
+            out.write('\u0011');
+            out.write((byte) (size - 1));
+            out.write(block, cursor, length);
+            cursor += length;
+            return length;
         }
         private long flushByte() throws IOException {
-            if (stored > 0) {
-                out.write('\u0010');
-                out.write(block[cursor++]);
-                return 1;
-            } else return 0;
+            out.write('\u0010');
+            out.write(block[cursor++]);
+            return 1;
         }
     }
 

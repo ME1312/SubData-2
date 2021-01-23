@@ -42,7 +42,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private OutputStreamL1 out;
     private ExecutorService writer;
     private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
-    private Thread read;
+    private Runnable readc;
     private int bs;
     private SubDataProtocol protocol;
     private Cipher cipher = NEH.get();
@@ -172,6 +172,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
+                        readc = () -> open.value = false;
                         scheduler.run(() -> {
                             try {
                                 packet.receive(sender);
@@ -217,7 +218,9 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
                 PipedInputStream data = new PipedInputStream(1024);
                 PipedOutputStream forward = new PipedOutputStream(data);
-                (read = new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Reader(" + socket.getLocalSocketAddress().toString() + ')')).start();
+                Thread reader = new Thread(() -> read(this, reset, data), "SubDataClient::Packet_Reader(" + socket.getLocalSocketAddress().toString() + ')');
+                readc = reader::interrupt;
+                reader.start();
 
                 // Step 2 // Decrypt the Data
                 cipher.decrypt(this, raw, forward);
@@ -541,7 +544,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             else if (isdcr != null && reason == CONNECTION_INTERRUPTED) reason = isdcr;
 
             state = CLOSED;
-            if (read != null) read.interrupt();
+            if (readc != null) readc.run();
             if (reason != CLOSE_REQUESTED) {
                 log.warning("Disconnected from " + socket.getRemoteSocketAddress() + ": " + reason);
             } else log.info("Disconnected from " + socket.getRemoteSocketAddress());
