@@ -61,7 +61,7 @@ public class SubDataClient extends DataClient {
         writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ')'));
         out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataServer::Block_Writer(" + address.toString() + ')');
         in = new InputStreamL1(new BufferedInputStream(client.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED), e -> {
-            DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
+            DebugUtil.logException(new IllegalStateException(address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
             close(PROTOCOL_MISMATCH);
         });
         statequeue = new HashMap<>();
@@ -146,19 +146,19 @@ public class SubDataClient extends DataClient {
                     }
                 };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
-                    DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), subdata.log);
+                    DebugUtil.logException(new IllegalStateException(address.toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), subdata.log);
                     close(PROTOCOL_MISMATCH);
                 } else if (state == CLOSING && id != 0xFFFE) {
                     forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
-                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(getAddress().toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (!packet.isCompatible(version)) throw new IllegalPacketException(getAddress().toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        DebugUtil.logException(new IllegalStateException(getAddress().toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), subdata.log);
+                        DebugUtil.logException(new IllegalStateException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), subdata.log);
                         close(PROTOCOL_MISMATCH);
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
@@ -172,7 +172,7 @@ public class SubDataClient extends DataClient {
                                     ((PacketStreamIn) packet).receive(this, forward);
                                 } else forward.close();
                             } catch (Throwable e) {
-                                DebugUtil.logException(new InvocationTargetException(e, getAddress().toString() + ": Exception while running packet handler"), subdata.log);
+                                DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet handler"), subdata.log);
                                 Util.isException(forward::close);
 
                                 if (state.asInt() <= INITIALIZATION.asInt())
@@ -234,7 +234,7 @@ public class SubDataClient extends DataClient {
     private void write(PacketOut next, OutputStream data) {
         // Step 1 // Create a detached data forwarding OutputStream
         try {
-            Container<Boolean> open = new Container<Boolean>(true);
+            Container<Boolean> open = new Container<>(true);
             OutputStream forward = new OutputStream() {
                 @Override
                 public void write(byte[] b, int off, int len) throws IOException {
@@ -254,8 +254,8 @@ public class SubDataClient extends DataClient {
             };
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
-            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(getAddress().toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
-            if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(getAddress().toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
+            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
+            if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(address.toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
             data.write(UnsignedDataHandler.toUnsigned((long) pOut.get(next.getClass()), 2));
             data.write(UnsignedDataHandler.toUnsigned((long) next.version(), 2));
@@ -270,7 +270,7 @@ public class SubDataClient extends DataClient {
 
                     next.sending(this);
                 } catch (Throwable e) {
-                    DebugUtil.logException(e, subdata.log);
+                    DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet writer"), subdata.log);
                     Util.isException(forward::close);
                 }
             });
@@ -300,7 +300,7 @@ public class SubDataClient extends DataClient {
                         }
                     } catch (Throwable e) {
                         if (!(e instanceof SocketException)) {
-                            DebugUtil.logException(e, subdata.log);
+                            DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet writer"), subdata.log);
                         }
                     }
                 } else {
@@ -316,7 +316,7 @@ public class SubDataClient extends DataClient {
      *
      * @param packets Packets to send
      */
-    public synchronized void sendPacket(PacketOut... packets) {
+    public void sendPacket(PacketOut... packets) {
         for (PacketOut packet : packets) {
             if (Util.isNull(packet)) throw new NullPointerException();
             if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
@@ -478,8 +478,8 @@ public class SubDataClient extends DataClient {
             timeout.cancel();
             if (readc != null) readc.run();
             if (reason != CLOSE_REQUESTED) {
-                subdata.log.warning(getAddress().toString() + " has disconnected: " + reason);
-            } else subdata.log.info(getAddress().toString() + " has disconnected");
+                subdata.log.warning(address.toString() + " has disconnected: " + reason);
+            } else subdata.log.info(address.toString() + " has disconnected");
 
             heartbeat.cancel();
             heartbeat = null;
