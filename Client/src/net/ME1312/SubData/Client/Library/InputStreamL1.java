@@ -46,7 +46,7 @@ public class InputStreamL1 {
                     }
                     total += transferred;
                     permitted -= transferred;
-                    if (transferred == length) {
+                    if (transferred == length || permitted != 0) {
                         break;
                     }
                     if (permit()) {
