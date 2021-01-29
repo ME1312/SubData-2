@@ -306,6 +306,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
                         // Step 5 // Add Escapes to the Encrypted Data
                         if (!socket.isClosed()) {
+                            out.limit = bs; // Reset temp size
                             out.flush();
                             out.control('\u0017');
                         }
@@ -488,11 +489,31 @@ public class SubDataClient extends DataClient implements SubDataSender {
         if (size == null) {
             bs = protocol.bs;
         } else bs = size;
-        out.resize(bs);
+        out.limit = bs;
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Set SubData's Block Size for the current packet
+     *
+     * @param size Block Size (null for default)
+     */
     @Override
+    public void tempBlockSize(Integer size) {
+        out.resize((size == null)? bs : size);
+    }
+
+    @Override
+    @Deprecated
+    public DataClient newChannel() throws IOException {
+        return openChannel();
+    }
+
+    /**
+     * Open an Async Data SubChannel
+     *
+     * @return New SubData Channel
+     */
+    @SuppressWarnings("unchecked")
     public SubDataClient openChannel() throws IOException {
         return protocol.sub((Callback<Runnable>) constructor[0], (Logger) constructor[1], (InetAddress) constructor[2], (int) constructor[3], (ObjectMap<?>) constructor[4]);
     }

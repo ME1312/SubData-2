@@ -75,6 +75,13 @@ public abstract class DataClient {
     public abstract void sendMessage(MessageOut... messages);
 
     /**
+     * Set SubData's Block Size for the current message
+     *
+     * @param size Block Size (null for default)
+     */
+    public abstract void tempBlockSize(Integer size);
+
+    /**
      * Get the Server this Client belongs to
      *
      * @return SubData Server

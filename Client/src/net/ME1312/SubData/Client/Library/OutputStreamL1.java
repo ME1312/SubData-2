@@ -17,8 +17,9 @@ public class OutputStreamL1 extends OutputStream {
     private final Logger log;
     private final Runnable shutdown;
     private final OutputStream out;
-    private int limit, cursor = 0;
     private byte[] block;
+    private int cursor = 0;
+    public int limit;
 
     public OutputStreamL1(Logger log, OutputStream stream, int limit, Runnable shutdown, String name) {
         this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, name));
@@ -30,7 +31,16 @@ public class OutputStreamL1 extends OutputStream {
     }
 
     public void resize(int limit) {
-        this.limit = limit;
+        if (this.limit != limit) {
+            this.limit = limit;
+            if (cursor >= limit) {
+                flush();
+            } else {
+                final byte[] block = this.block;
+                this.block = new byte[limit];
+                System.arraycopy(block, 0, this.block, 0, cursor);
+            }
+        }
     }
 
     @Override

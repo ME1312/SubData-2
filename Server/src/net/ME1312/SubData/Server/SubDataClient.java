@@ -295,6 +295,7 @@ public class SubDataClient extends DataClient {
 
                         // Step 5 // Add Escapes to the Encrypted Data
                         if (!socket.isClosed()) {
+                            out.limit = bs;
                             out.flush();
                             out.control('\u0017');
                         }
@@ -392,7 +393,17 @@ public class SubDataClient extends DataClient {
         if (size == null) {
             bs = subdata.protocol.bs;
         } else bs = size;
-        out.resize(bs);
+        out.limit = bs;
+    }
+
+    /**
+     * Set SubData's Block Size for the current packet
+     *
+     * @param size Block Size (null for default)
+     */
+    @Override
+    public void tempBlockSize(Integer size) {
+        out.resize((size == null)? bs : size);
     }
 
     public Object getAuthResponse() {
@@ -415,6 +426,7 @@ public class SubDataClient extends DataClient {
     }
 
     @Override
+    @Deprecated
     public void newChannel(Callback<DataClient> client) {
         openChannel(client::run);
     }

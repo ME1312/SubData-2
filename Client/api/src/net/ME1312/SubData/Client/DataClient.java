@@ -110,6 +110,13 @@ public abstract class DataClient implements DataSender {
     public abstract void forwardMessage(UUID id, MessageOut... messages);
 
     /**
+     * Set SubData's Block Size for the current message
+     *
+     * @param size Block Size (null for default)
+     */
+    public abstract void tempBlockSize(Integer size);
+
+    /**
      * Get the Client that connects the Server to us
      *
      * @deprecated The Client connection to the Server is this
@@ -148,7 +155,7 @@ public abstract class DataClient implements DataSender {
      *
      * @return New SubData Channel
      */
-    public abstract DataClient openChannel() throws IOException;
+    public abstract DataClient newChannel() throws IOException;
 
     /**
      * Closes the connection
