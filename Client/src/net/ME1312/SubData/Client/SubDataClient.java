@@ -70,7 +70,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
         this.address = new InetSocketAddress(socket.getInetAddress(), socket.getPort());
         this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataClient::Data_Writer(" + this.address.toString() + ')'));
         this.out = new OutputStreamL1(log, socket.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataClient::Block_Writer(" + this.address.toString() + ')');
-        this.in = new InputStreamL1(new BufferedInputStream(socket.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED), e -> {
+        this.in = new InputStreamL1(new BufferedInputStream(socket.getInputStream()), () -> close(CONNECTION_INTERRUPTED), e -> {
             DebugUtil.logException(new IllegalStateException(this.address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), log);
             close(PROTOCOL_MISMATCH);
         });

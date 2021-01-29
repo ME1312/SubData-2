@@ -60,7 +60,7 @@ public class SubDataClient extends DataClient {
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
         writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ')'));
         out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataServer::Block_Writer(" + address.toString() + ')');
-        in = new InputStreamL1(new BufferedInputStream(client.getInputStream(), bs), () -> close(CONNECTION_INTERRUPTED), e -> {
+        in = new InputStreamL1(new BufferedInputStream(client.getInputStream()), () -> close(CONNECTION_INTERRUPTED), e -> {
             DebugUtil.logException(new IllegalStateException(address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
             close(PROTOCOL_MISMATCH);
         });
