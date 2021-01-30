@@ -19,7 +19,7 @@ import java.util.HashMap;
  * Packet Message Sending Class
  */
 public class PacketSendMessage implements Forwardable, PacketStreamOut {
-    private MessageOut message;
+    private final MessageOut message;
 
     /**
      * PacketSendMessage (Out)
@@ -46,6 +46,11 @@ public class PacketSendMessage implements Forwardable, PacketStreamOut {
         out.control('\u0003');
         if (message instanceof MessageStreamOut) ((MessageStreamOut) message).send(sender, data);
         else data.close();
+    }
+
+    @Override
+    public void sending(SubDataSender sender) throws Throwable {
+        message.sending(sender);
     }
 
     @Override

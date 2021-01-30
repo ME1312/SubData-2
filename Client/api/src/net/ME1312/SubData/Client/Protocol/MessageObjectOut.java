@@ -2,7 +2,7 @@ package net.ME1312.SubData.Client.Protocol;
 
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.SubData.Client.DataSender;
-import net.ME1312.SubData.Client.Library.MessagePackHandler;
+import net.ME1312.SubData.Client.Library.MessageData;
 
 import org.msgpack.core.MessagePack;
 
@@ -26,7 +26,7 @@ public interface MessageObjectOut<K> extends MessageStreamOut {
     @Override
     default void send(DataSender sender, OutputStream data) throws Throwable {
         ObjectMap<K> output = send(sender);
-        if (output != null) MessagePack.newDefaultPacker(data).packValue(MessagePackHandler.pack(output)).close();
+        if (output != null) MessagePack.newDefaultPacker(data).packValue(MessageData.pack(output)).close();
         else data.close();
     }
 }

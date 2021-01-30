@@ -1,7 +1,7 @@
 package net.ME1312.SubData.Server.Protocol;
 
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.SubData.Server.Library.MessagePackHandler;
+import net.ME1312.SubData.Server.Library.MessageData;
 import net.ME1312.SubData.Server.SubDataClient;
 
 import org.msgpack.core.MessageInsufficientBufferException;
@@ -27,7 +27,7 @@ public interface PacketObjectIn<K> extends PacketStreamIn {
     @Override
     default void receive(SubDataClient client, InputStream data) throws Throwable {
         try (MessageUnpacker msg = MessagePack.newDefaultUnpacker(data)) {
-            receive(client, MessagePackHandler.unpack(msg.unpackValue().asMapValue()));
+            receive(client, MessageData.unpack(msg.unpackValue().asMapValue()));
         } catch (MessageInsufficientBufferException e) {
             receive(client, (ObjectMap<K>) null);
         }

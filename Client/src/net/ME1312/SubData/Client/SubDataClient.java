@@ -108,21 +108,18 @@ public class SubDataClient extends DataClient implements SubDataSender {
     private void read(SubDataSender sender, Container<Boolean> reset, InputStream data) {
         try {
             // Step 3 // Read the Packet Metadata
-            ByteArrayOutputStream pending = new ByteArrayOutputStream();
+            byte[] pending = new byte[2];
             int id = -1, version = -1;
 
             int b, position = 0;
             while (position < 4 && (b = data.read()) != -1) {
-                position++;
-                pending.write(b);
+                pending[position++ % 2] = (byte) b;
                 switch (position) {
                     case 2:
-                        id = (int) UnsignedDataHandler.fromUnsigned(pending.toByteArray());
-                        pending.reset();
+                        id = (int) UnsignedData.resign(pending);
                         break;
                     case 4:
-                        version = (int) UnsignedDataHandler.fromUnsigned(pending.toByteArray());
-                        pending.reset();
+                        version = (int) UnsignedData.resign(pending);
                         break;
                 }
             }
@@ -268,8 +265,8 @@ public class SubDataClient extends DataClient implements SubDataSender {
             if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
             if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(address.toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
-            data.write(UnsignedDataHandler.toUnsigned((long) pOut.get(next.getClass()), 2));
-            data.write(UnsignedDataHandler.toUnsigned((long) next.version(), 2));
+            data.write(UnsignedData.unsign((long) pOut.get(next.getClass()), 2));
+            data.write(UnsignedData.unsign((long) next.version(), 2));
             data.flush();
 
             // Step 3 // Invoke the Packet

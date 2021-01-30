@@ -1,4 +1,4 @@
-package net.ME1312.SubData.Client.Library;
+package net.ME1312.SubData.Server.Library;
 
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 
@@ -11,9 +11,9 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
- * Message Pack Handler Class
+ * MessagePack Data Conversion Class
  */
-public class MessagePackHandler {
+public class MessageData {
 
     /**
      * Convert an ObjectMap to a MessagePack Map

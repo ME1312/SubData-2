@@ -44,21 +44,18 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
 
     @Override
     public void receive(SubDataClient client, InputStream in) throws Throwable {
-        ByteArrayOutputStream pending = new ByteArrayOutputStream();
+        byte[] pending = new byte[8];
         long id_p1 = -1, id_p2 = -1;
 
         int b, position = 0;
         while (position < 16 && (b = in.read()) != -1) {
-            position++;
-            pending.write(b);
+            pending[position++ % 8] = (byte) b;
             switch (position) {
                 case 8:
-                    id_p1 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
-                    pending.reset();
+                    id_p1 = ByteBuffer.wrap(pending).order(ByteOrder.BIG_ENDIAN).getLong();
                     break;
                 case 16:
-                    id_p2 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
-                    pending.reset();
+                    id_p2 = ByteBuffer.wrap(pending).order(ByteOrder.BIG_ENDIAN).getLong();
                     break;
             }
         }

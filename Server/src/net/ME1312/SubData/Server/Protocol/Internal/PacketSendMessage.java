@@ -18,7 +18,7 @@ import java.util.HashMap;
  * Packet Message Sending Class
  */
 public class PacketSendMessage implements PacketStreamOut {
-    private MessageOut message;
+    private final MessageOut message;
 
     /**
      * PacketSendMessage (Out)
@@ -45,6 +45,11 @@ public class PacketSendMessage implements PacketStreamOut {
         out.control('\u0003');
         if (message instanceof MessageStreamOut) ((MessageStreamOut) message).send(client, data);
         else data.close();
+    }
+
+    @Override
+    public void sending(SubDataClient client) throws Throwable {
+        message.sending(client);
     }
 
     @Override
