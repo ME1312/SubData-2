@@ -75,6 +75,13 @@ public abstract class DataClient {
     public abstract void sendMessage(MessageOut... messages);
 
     /**
+     * Get SubData's default Block Size
+     *
+     * @return Block Size
+     */
+    public abstract int getBlockSize();
+
+    /**
      * Set SubData's Block Size for the current message
      *
      * @param size Block Size (null for default)

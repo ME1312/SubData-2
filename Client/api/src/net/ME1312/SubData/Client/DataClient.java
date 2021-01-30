@@ -110,6 +110,13 @@ public abstract class DataClient implements DataSender {
     public abstract void forwardMessage(UUID id, MessageOut... messages);
 
     /**
+     * Get SubData's default Block Size
+     *
+     * @return Block Size
+     */
+    public abstract int getBlockSize();
+
+    /**
      * Set SubData's Block Size for the current message
      *
      * @param size Block Size (null for default)
