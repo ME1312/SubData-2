@@ -261,11 +261,11 @@ public class SubDataClient extends DataClient {
             // Step 3 // Invoke the Packet
             subdata.scheduler.run(() -> {
                 try {
+                    next.sending(this);
+
                     if (next instanceof PacketStreamOut) {
                         ((PacketStreamOut) next).send(this, forward);
                     } else forward.close();
-
-                    next.sending(this);
                 } catch (Throwable e) {
                     DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet writer"), subdata.log);
                     Util.isException(forward::close);

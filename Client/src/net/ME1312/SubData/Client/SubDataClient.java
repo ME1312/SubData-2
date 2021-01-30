@@ -272,11 +272,11 @@ public class SubDataClient extends DataClient implements SubDataSender {
             // Step 3 // Invoke the Packet
             scheduler.run(() -> {
                 try {
+                    next.sending(sender);
+
                     if (next instanceof PacketStreamOut) {
                         ((PacketStreamOut) next).send(sender, forward);
                     } else forward.close();
-
-                    next.sending(sender);
                 } catch (Throwable e) {
                     DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet writer"), log);
                     Util.isException(forward::close);
