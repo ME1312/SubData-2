@@ -9,10 +9,7 @@ import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Encryption.NEH;
 import net.ME1312.SubData.Client.Library.*;
-import net.ME1312.SubData.Client.Library.Exception.EncryptionException;
-import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
-import net.ME1312.SubData.Client.Library.Exception.IllegalPacketException;
-import net.ME1312.SubData.Client.Library.Exception.IllegalSenderException;
+import net.ME1312.SubData.Client.Library.Exception.*;
 import net.ME1312.SubData.Client.Protocol.*;
 import net.ME1312.SubData.Client.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Client.Protocol.Initial.InitialPacket;
@@ -71,7 +68,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
         this.writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataClient::Data_Writer(" + this.address.toString() + ')'));
         this.out = new OutputStreamL1(log, socket.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataClient::Block_Writer(" + this.address.toString() + ')');
         this.in = new InputStreamL1(new BufferedInputStream(socket.getInputStream()), () -> close(CONNECTION_INTERRUPTED), e -> {
-            DebugUtil.logException(new IllegalStateException(this.address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), log);
+            DebugUtil.logException(new ProtocolException(this.address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), log);
             close(PROTOCOL_MISMATCH);
         });
         this.statequeue = new HashMap<>();
@@ -152,22 +149,20 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     }
                 };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
-                    DebugUtil.logException(new IllegalStateException(address.toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), log);
-                    close(PROTOCOL_MISMATCH);
+                    throw new ProtocolException(address.toString() + ": Only 0x0000 may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                 } else if (state == CLOSING && id != 0xFFFE) {
                     forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException(address.toString() + ": The handler does not support forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException(address.toString() + ": The handler does not support non-forwarded packets: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-                    if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException(address.toString() + ": This handler does not support forwarded packets: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException(address.toString() + ": This handler does not support non-forwarded packets: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": This handler does not support packet version " + DebugUtil.toHex(0xFFFF, packet.version()) + ": [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        DebugUtil.logException(new IllegalStateException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), log);
-                        close(PROTOCOL_MISMATCH);
+                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
@@ -192,6 +187,9 @@ public class SubDataClient extends DataClient implements SubDataSender {
                 }
             }
         } catch (InterruptedIOException e) {
+        } catch (ProtocolException e) {
+            DebugUtil.logException(e, log);
+            close(PROTOCOL_MISMATCH);
         } catch (Exception e) {
             if (!reset.value) {
                 if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {

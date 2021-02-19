@@ -37,7 +37,7 @@ public class InputStreamL1 {
         public int read(byte[] data, int offset, int length) throws IOException {
             if (open == this) {
                 int transferred, total = 0;
-                do {
+                for (;;) {
                     transferred = in.read(data, offset, Math.min(length, permitted));
                     if (transferred == -1) {
                         shutdown.run();
@@ -55,14 +55,14 @@ public class InputStreamL1 {
                     }
                     offset += transferred;
                     length -= transferred;
-                } while (true);
+                }
                 return total;
             } else return -1;
         }
 
         @Override
         public int read() throws IOException {
-            do {
+            for (;;) {
                 if (permitted != 0) {
                     int b = in.read();
                     if (b == -1) {
@@ -76,7 +76,7 @@ public class InputStreamL1 {
                     if (permit())
                         return -1;
                 }
-            } while (true);
+            }
         }
 
         @Override
@@ -92,7 +92,7 @@ public class InputStreamL1 {
         private boolean permit() throws IOException {
             if (open == this) {
                 int b = in.read();
-                do {
+                for (;;) {
                     switch (b) {
                      /* case '\u0014': // [DC4] Raw GB Block(s) of Data
                             permitted = (in.read() + 1) * GBB; // Impossible with 32-bit signed int :(
@@ -126,7 +126,7 @@ public class InputStreamL1 {
                     }
 
                     b = in.read();
-                } while (true);
+                }
             } else return true;
         }
     }

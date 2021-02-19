@@ -22,8 +22,7 @@ public class PacketRecieveMessage implements PacketStreamIn {
     @Override
     public void receive(SubDataClient client, InputStream data) throws Throwable {
         ByteArrayOutputStream pending = new ByteArrayOutputStream();
-        String channel = null, handle = null;
-        Version version = null;
+        String channel = null, handle = null, version = null;
 
         // Parse Message Metadata
         boolean escaped = false;
@@ -43,7 +42,7 @@ public class PacketRecieveMessage implements PacketStreamIn {
                                 handle = new String(pending.toByteArray(), StandardCharsets.UTF_8);
                                 break;
                             case 2:
-                                version = Version.fromString(new String(pending.toByteArray(), StandardCharsets.UTF_8));
+                                version = new String(pending.toByteArray(), StandardCharsets.UTF_8);
                                 break;
                         }
                         pending.reset();
@@ -68,7 +67,7 @@ public class PacketRecieveMessage implements PacketStreamIn {
         if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
-        if (!message.isCompatible(version)) throw new IllegalMessageException("The handler does not support this message version (\"" + message.version() + "\"): [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
+        if (!message.isCompatible(Version.fromString(version))) throw new IllegalMessageException("This handler does not support message version \"" + message.version().toFullString() + "\": [" + message.getClass().getCanonicalName() + ", \"" + version + "\"]");
         message.receive(client);
         if (message instanceof MessageStreamIn) ((MessageStreamIn) message).receive(client, data);
         else data.close();

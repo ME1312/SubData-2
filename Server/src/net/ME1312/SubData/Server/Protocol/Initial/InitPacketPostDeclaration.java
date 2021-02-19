@@ -19,7 +19,7 @@ public final class InitPacketPostDeclaration implements InitialProtocol.Packet, 
             ObjectMap<Integer> data = new ObjectMap<Integer>();
             data.set(0x0000, client.getID());
             data.set(0x0001, client.getServer().getProtocol().getName());
-            data.set(0x0002, client.getServer().getProtocol().getVersion());
+            data.set(0x0002, client.getServer().getProtocol().getVersion().toFullString());
             return data;
         } else return null;
     }

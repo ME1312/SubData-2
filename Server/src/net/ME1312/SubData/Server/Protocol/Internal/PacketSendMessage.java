@@ -41,7 +41,7 @@ public class PacketSendMessage implements PacketStreamOut {
         out.control('\u0003');
         out.write(mOut.get(message.getClass()).value().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
-        out.write(message.version().toString().getBytes(StandardCharsets.UTF_8));
+        out.write(message.version().toFullString().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
         if (message instanceof MessageStreamOut) ((MessageStreamOut) message).send(client, data);
         else data.close();

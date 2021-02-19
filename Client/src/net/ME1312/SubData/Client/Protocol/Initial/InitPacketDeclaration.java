@@ -2,6 +2,8 @@ package net.ME1312.SubData.Client.Protocol.Initial;
 
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Library.ConnectionState;
+import net.ME1312.SubData.Client.Library.DebugUtil;
+import net.ME1312.SubData.Client.Library.Exception.ProtocolException;
 import net.ME1312.SubData.Client.Protocol.PacketIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataClient;
@@ -22,5 +24,11 @@ public final class InitPacketDeclaration implements InitialProtocol.Packet, Pack
     @Override
     public int version() {
         return 0x0004;
+    }
+
+    @Override
+    public boolean isCompatible(int version) {
+        if (version() != version) throw new ProtocolException("SubData protocol version mismatch: [" + DebugUtil.toHex(0xFFFF, version) + "] is not [" + DebugUtil.toHex(0xFFFF, version()) + "]");
+        return true;
     }
 }

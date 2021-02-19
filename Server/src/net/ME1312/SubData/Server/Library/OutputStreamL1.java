@@ -46,7 +46,7 @@ public class OutputStreamL1 extends OutputStream {
     @Override
     public void write(byte[] data, int offset, int length) {
         int transferred;
-        do {
+        for (;;) {
             System.arraycopy(data, offset, block, cursor, transferred = Math.min(length, block.length - cursor));
             cursor += transferred;
             if (transferred == length) {
@@ -55,7 +55,7 @@ public class OutputStreamL1 extends OutputStream {
             flush();
             offset += transferred;
             length -= transferred;
-        } while (true);
+        }
 
         if (cursor == block.length) flush();
     }

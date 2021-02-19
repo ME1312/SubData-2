@@ -8,6 +8,7 @@ import net.ME1312.SubData.Client.DataClient;
 import net.ME1312.SubData.Client.Library.ConnectionState;
 import net.ME1312.SubData.Client.Library.DebugUtil;
 import net.ME1312.SubData.Client.Library.DisconnectReason;
+import net.ME1312.SubData.Client.Library.Exception.ProtocolException;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataClient;
@@ -35,11 +36,11 @@ public final class InitPacketPostDeclaration implements InitialProtocol.Packet, 
                     Util.reflect(DataClient.class.getDeclaredField("id"), sender.getConnection(), clientID);
                     sender.sendPacket(this);
                 } else {
-                    DebugUtil.logException(new IllegalArgumentException("Protocol version mismatch: [" + version + "] is not one of " + versions.toString()), Util.reflect(SubDataClient.class.getDeclaredField("log"), sender.getConnection()));
+                    DebugUtil.logException(new ProtocolException("Protocol version mismatch: [" + version.toFullString() + "] is not one of " + Version.toFullString(versions)), Util.reflect(SubDataClient.class.getDeclaredField("log"), sender.getConnection()));
                     Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), sender.getConnection(), DisconnectReason.PROTOCOL_MISMATCH);
                 }
             } else {
-                DebugUtil.logException(new IllegalArgumentException("Protocol mismatch: [" + name + "] != [" + sender.getProtocol().getName() + "]"), Util.reflect(SubDataClient.class.getDeclaredField("log"), sender.getConnection()));
+                DebugUtil.logException(new ProtocolException("Protocol mismatch: [" + name + "] is not [" + sender.getProtocol().getName() + "]"), Util.reflect(SubDataClient.class.getDeclaredField("log"), sender.getConnection()));
                 Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), sender.getConnection(), DisconnectReason.PROTOCOL_MISMATCH);
             }
         }

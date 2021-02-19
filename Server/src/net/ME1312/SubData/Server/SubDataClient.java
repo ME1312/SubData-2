@@ -11,6 +11,7 @@ import net.ME1312.SubData.Server.Library.*;
 import net.ME1312.SubData.Server.Library.Exception.EncryptionException;
 import net.ME1312.SubData.Server.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Server.Library.Exception.IllegalPacketException;
+import net.ME1312.SubData.Server.Library.Exception.ProtocolException;
 import net.ME1312.SubData.Server.Protocol.Initial.InitPacketDeclaration;
 import net.ME1312.SubData.Server.Protocol.Initial.InitialPacket;
 import net.ME1312.SubData.Server.Protocol.Initial.InitialProtocol;
@@ -61,7 +62,7 @@ public class SubDataClient extends DataClient {
         writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ')'));
         out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataServer::Block_Writer(" + address.toString() + ')');
         in = new InputStreamL1(new BufferedInputStream(client.getInputStream()), () -> close(CONNECTION_INTERRUPTED), e -> {
-            DebugUtil.logException(new IllegalStateException(address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
+            DebugUtil.logException(new ProtocolException(address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
             close(PROTOCOL_MISMATCH);
         });
         statequeue = new HashMap<>();
@@ -143,20 +144,18 @@ public class SubDataClient extends DataClient {
                     }
                 };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
-                    DebugUtil.logException(new IllegalStateException(address.toString() + ": Only InitPacketDeclaration (0x0000) may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]"), subdata.log);
-                    close(PROTOCOL_MISMATCH);
+                    throw new ProtocolException(address.toString() + ": Only 0x0000 may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                 } else if (state == CLOSING && id != 0xFFFE) {
                     forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": The handler does not support this packet version (" + DebugUtil.toHex(0xFFFF, packet.version()) + "): [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": This handler does not support packet version " + DebugUtil.toHex(0xFFFF, packet.version()) + ": [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        DebugUtil.logException(new IllegalStateException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: " + packet.getClass().getCanonicalName()), subdata.log);
-                        close(PROTOCOL_MISMATCH);
+                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
@@ -181,6 +180,9 @@ public class SubDataClient extends DataClient {
                 }
             }
         } catch (InterruptedIOException e) {
+        } catch (ProtocolException e) {
+            DebugUtil.logException(e, subdata.log);
+            close(PROTOCOL_MISMATCH);
         } catch (Exception e) {
             if (!reset.value) {
                 if (!(e instanceof SocketException && !Boolean.getBoolean("subdata.debug"))) {
