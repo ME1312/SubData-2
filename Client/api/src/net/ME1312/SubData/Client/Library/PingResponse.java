@@ -4,18 +4,18 @@ package net.ME1312.SubData.Client.Library;
  * Ping Response Class
  */
 public class PingResponse {
-    private final long qL, qR, n1, n2;
+    private final long qL, qR, t1, t2;
 
     /**
-     * Calculates and stores the meaning of a ping using it's recorded timings
+     * Calculates and stores the meaning of a ping using its recorded timings
      *
      * @param timings Ping Timings
      */
     public PingResponse(long[] timings) {
         qL = timings[1] - timings[0];
         qR = timings[3] - timings[2];
-        n1 = timings[2] - timings[1];
-        n2 = timings[4] - timings[3];
+        t1 = timings[2] - timings[1];
+        t2 = timings[4] - timings[3];
     }
 
     /**
@@ -51,7 +51,7 @@ public class PingResponse {
      * @return Transfer Time
      */
     public long getTransferTime() {
-        return n1 + n2;
+        return t1 + t2;
     }
 
     /**
@@ -60,7 +60,7 @@ public class PingResponse {
      * @return Upload Transfer Time
      */
     public long getUploadTransferTime() {
-        return n1;
+        return t1;
     }
 
     /**
@@ -68,8 +68,8 @@ public class PingResponse {
      *
      * @return Download Transfer Time
      */
-    public long getDownloadTransferTimeFrom() {
-        return n2;
+    public long getDownloadTransferTime() {
+        return t2;
     }
 
     /**
@@ -78,6 +78,6 @@ public class PingResponse {
      * @return Response Time
      */
     public long getResponseTime() {
-        return qL + qR + n1 + n2;
+        return qL + qR + t1 + t2;
     }
 }

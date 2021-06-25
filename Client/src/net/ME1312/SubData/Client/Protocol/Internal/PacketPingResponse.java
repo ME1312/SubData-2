@@ -83,10 +83,11 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
             }
         }
 
+        in.close();
         UUID id = new UUID(id_p1, id_p2);
-        if (data.keySet().contains(id)) {
-            timings[4] = Calendar.getInstance().getTime().getTime(); // Transaction Complete [4]
+        timings[4] = Calendar.getInstance().getTime().getTime(); // Transaction Complete [4]
 
+        if (data.containsKey(id)) {
             timings[0] = data.get(id).init;
             timings[1] = data.get(id).queue;
 
