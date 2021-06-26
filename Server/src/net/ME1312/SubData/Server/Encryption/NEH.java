@@ -31,7 +31,7 @@ public final class NEH implements Cipher {
     @Override
     public void encrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         int i;
-        byte[] b = new byte[4096];
+        byte[] b = new byte[1024];
         while ((i = in.read(b)) != -1) {
             out.write(b, 0, i);
         }
@@ -40,7 +40,7 @@ public final class NEH implements Cipher {
     @Override
     public void decrypt(DataClient client, InputStream in, OutputStream out) throws Exception {
         int i;
-        byte[] b = new byte[4096];
+        byte[] b = new byte[1024];
         while ((i = in.read(b)) != -1) {
             out.write(b, 0, i);
         }

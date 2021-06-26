@@ -13,7 +13,7 @@ These are some quick links for common resources of SubData.
 > [https://dev.me1312.net/jenkins/job/SubData](https://dev.me1312.net/jenkins/job/SubData)
 
 ### Javadocs for Developers
-> [https://dev.me1312.net/jenkins/job/SubData/javadoc/Server/](https://dev.me1312.net/jenkins/job/SubData/javadoc/Server/)<br>
-> [https://dev.me1312.net/jenkins/job/SubData/javadoc/ServerAPI/](https://dev.me1312.net/jenkins/job/SubData/javadoc/ServerAPI/)<br>
-> [https://dev.me1312.net/jenkins/job/SubData/javadoc/Client/](https://dev.me1312.net/jenkins/job/SubData/javadoc/Client/)<br>
-> [https://dev.me1312.net/jenkins/job/SubData/javadoc/ClientAPI/](https://dev.me1312.net/jenkins/job/SubData/javadoc/ClientAPI/)<br>
+> [https://dev.me1312.net/jenkins/job/SubData/javadoc/Server](https://dev.me1312.net/jenkins/job/SubData/javadoc/Server)<br>
+> [https://dev.me1312.net/jenkins/job/SubData/javadoc/ServerAPI](https://dev.me1312.net/jenkins/job/SubData/javadoc/ServerAPI)<br>
+> [https://dev.me1312.net/jenkins/job/SubData/javadoc/Client](https://dev.me1312.net/jenkins/job/SubData/javadoc/Client)<br>
+> [https://dev.me1312.net/jenkins/job/SubData/javadoc/ClientAPI](https://dev.me1312.net/jenkins/job/SubData/javadoc/ClientAPI)<br>
