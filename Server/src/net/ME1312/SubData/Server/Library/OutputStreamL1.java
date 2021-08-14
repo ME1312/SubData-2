@@ -50,14 +50,13 @@ public class OutputStreamL1 extends OutputStream {
             System.arraycopy(data, offset, block, cursor, transferred = Math.min(length, block.length - cursor));
             cursor += transferred;
             if (transferred == length) {
-                break;
+                if (cursor == block.length) flush();
+                return;
             }
             flush();
             offset += transferred;
             length -= transferred;
         }
-
-        if (cursor == block.length) flush();
     }
 
     @Override

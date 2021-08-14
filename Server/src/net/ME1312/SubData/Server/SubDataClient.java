@@ -318,7 +318,7 @@ public class SubDataClient extends DataClient {
      */
     public void sendPacket(PacketOut... packets) {
         for (PacketOut packet : packets) {
-            if (Util.isNull(packet)) throw new NullPointerException();
+            if (Util.isNull(packet)) continue;
             if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
                 if (next == null) sendPacketLater(packet, CLOSED);
                 else next.sendPacket(packet);
@@ -340,7 +340,7 @@ public class SubDataClient extends DataClient {
     public void sendMessage(MessageOut... messages) {
         List<PacketOut> list = new ArrayList<>();
         for (MessageOut message : messages) {
-            if (Util.isNull(message)) throw new NullPointerException();
+            if (Util.isNull(message)) continue;
             list.add(new PacketSendMessage(message));
         }
         sendPacket(list.toArray(new PacketOut[0]));

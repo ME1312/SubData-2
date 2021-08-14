@@ -42,21 +42,20 @@ public class InputStreamL1 {
                     if (transferred == -1) {
                         shutdown.run();
                         if (total == 0) return -1;
-                        break;
+                        return total;
                     }
                     total += transferred;
                     permitted -= transferred;
                     if (transferred == length || permitted != 0) {
-                        break;
+                        return total;
                     }
                     if (permit()) {
                         if (total == 0) return -1;
-                        break;
+                        return total;
                     }
                     offset += transferred;
                     length -= transferred;
                 }
-                return total;
             } else return -1;
         }
 
@@ -73,8 +72,9 @@ public class InputStreamL1 {
                         return b;
                     }
                 } else {
-                    if (permit())
+                    if (permit()) {
                         return -1;
+                    }
                 }
             }
         }
@@ -124,7 +124,6 @@ public class InputStreamL1 {
                             error.run(b);
                             return true;
                     }
-
                     b = in.read();
                 }
             } else return true;

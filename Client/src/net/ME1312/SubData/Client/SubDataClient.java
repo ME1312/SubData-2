@@ -326,7 +326,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
      */
     public void sendPacket(PacketOut... packets) {
         for (PacketOut packet : packets) {
-            if (Util.isNull(packet)) throw new NullPointerException();
+            if (Util.isNull(packet)) continue;
             if (packet instanceof ForwardOnly) throw new IllegalPacketException("Packet is Forward-Only");
             if (isClosed() || (state == CLOSING && !(packet instanceof PacketDisconnect || packet instanceof PacketDisconnectUnderstood))) {
                 if (next == null) sendPacketLater(packet, CLOSED);
@@ -356,7 +356,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     public void forwardPacket(UUID id, PacketOut... packets) {
         List<PacketOut> list = new ArrayList<>();
         for (PacketOut packet : packets) {
-            if (Util.isNull(id, packet)) throw new NullPointerException();
+            if (Util.isNull(id, packet)) continue;
             if (!(packet instanceof Forwardable)) throw new IllegalPacketException("Packet is not Forwardable");
             sendPacket(new PacketForwardPacket(id, packet));
         }
@@ -366,7 +366,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
     public void sendMessage(MessageOut... messages) {
         List<PacketOut> list = new ArrayList<>();
         for (MessageOut message : messages) {
-            if (Util.isNull(message)) throw new NullPointerException();
+            if (Util.isNull(message)) continue;
             if (message instanceof ForwardOnly) throw new IllegalMessageException("Message is Forward-Only");
             list.add(new PacketSendMessage(message));
         }
@@ -378,7 +378,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
 
         List<PacketOut> list = new ArrayList<>();
         for (MessageOut message : messages) {
-            if (Util.isNull(message)) throw new NullPointerException();
+            if (Util.isNull(message)) continue;
             if (!(message instanceof Forwardable)) throw new IllegalMessageException("Message is not Forwardable");
             list.add(new PacketForwardPacket(id, new PacketSendMessage(message)));
         }
