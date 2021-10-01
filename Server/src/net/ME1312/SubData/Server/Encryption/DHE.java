@@ -61,15 +61,15 @@ public class DHE implements Cipher, CipherFactory {
      */
     public static DHE get(int keyLength) {
         if (keyLength != 128 && keyLength != 192 && keyLength != 256) throw new IllegalArgumentException(Integer.toString(keyLength));
-        if (!instances.keySet().contains(keyLength)) instances.put(keyLength, new DHE(keyLength));
+        if (!instances.containsKey(keyLength)) instances.put(keyLength, new DHE(keyLength));
         return instances.get(keyLength);
     }
     private DHE(int keyLength) {
         this.keyLength = keyLength;
     }
     private final class Data {
-        private PublicKey key;
-        private KeyAgreement agreement;
+        private final PublicKey key;
+        private final KeyAgreement agreement;
         private ByteArrayOutputStream data;
         private boolean sent, initSent, received;
         private Cipher next;
@@ -218,8 +218,8 @@ public class DHE implements Cipher, CipherFactory {
     public static void addCipher(String handle, ReturnRunnable<Pair<Cipher, String>> generator, ReturnCallback<String, Cipher> parser) {
         if (Util.isNull(generator)) throw new NullPointerException();
         handle = handle.toUpperCase();
-        if (!forwardG.keySet().contains(handle)) forwardG.put(handle, generator);
-        if (!forwardP.keySet().contains(handle)) forwardP.put(handle, parser);
+        if (!forwardG.containsKey(handle)) forwardG.put(handle, generator);
+        if (!forwardP.containsKey(handle)) forwardP.put(handle, parser);
     }
 
     public static void removeCipher(String handle) {

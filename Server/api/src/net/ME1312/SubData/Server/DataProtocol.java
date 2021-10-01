@@ -42,7 +42,7 @@ public abstract class DataProtocol {
      */
     public void registerMessage(String channel, String handle, MessageIn message) {
         if (Util.isNull(message, channel, handle)) throw new NullPointerException();
-        HashMap<String, MessageIn> map = (mIn.keySet().contains(channel.toLowerCase()))? mIn.get(channel.toLowerCase()):new HashMap<String, MessageIn>();
+        HashMap<String, MessageIn> map = (mIn.containsKey(channel.toLowerCase()))? mIn.get(channel.toLowerCase()):new HashMap<String, MessageIn>();
         map.put(handle, message);
         mIn.put(channel.toLowerCase(), map);
     }
@@ -55,9 +55,8 @@ public abstract class DataProtocol {
      */
     public void unregisterMessage(String channel, MessageIn message) {
         if (Util.isNull(channel, message)) throw new NullPointerException();
-        if (mIn.keySet().contains(channel.toLowerCase())) {
-            List<String> search = new ArrayList<String>();
-            search.addAll(mIn.get(channel.toLowerCase()).keySet());
+        if (mIn.containsKey(channel.toLowerCase())) {
+            List<String> search = new ArrayList<>(mIn.get(channel.toLowerCase()).keySet());
             for (String handle : search) if (mIn.get(channel.toLowerCase()).get(handle).equals(message)) {
                 mIn.get(channel.toLowerCase()).remove(handle);
                 if (mIn.get(channel.toLowerCase()).size() <= 0)
@@ -86,7 +85,7 @@ public abstract class DataProtocol {
      */
     public void unregisterMessage(String channel, Class<? extends MessageOut> message) {
         if (Util.isNull(channel, message)) throw new NullPointerException();
-        if (mOut.keySet().contains(message) && mOut.get(message).key().equalsIgnoreCase(channel)) mOut.remove(message);
+        if (mOut.containsKey(message) && mOut.get(message).key().equalsIgnoreCase(channel)) mOut.remove(message);
     }
 
     /**

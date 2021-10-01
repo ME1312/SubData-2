@@ -20,8 +20,8 @@ public class DebugUtil {
         boolean negative = value < 0;
         if (negative) value *= -1;
         String ex = Integer.toHexString(example);
-        String hex = Integer.toHexString(value).toUpperCase();
-        while (hex.length() < ex.length()) hex = "0" + hex;
+        StringBuilder hex = new StringBuilder(Integer.toHexString(value).toUpperCase());
+        while (hex.length() < ex.length()) hex.insert(0, "0");
         return ((negative)?"-":"") + "0x" + hex;
     }
 

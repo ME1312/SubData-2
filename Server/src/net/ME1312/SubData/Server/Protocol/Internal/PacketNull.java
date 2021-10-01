@@ -12,7 +12,7 @@ public final class PacketNull implements InitialProtocol.Packet, PacketIn, Packe
     public boolean sent = false;
 
     @Override
-    public void sending(SubDataClient client) throws Throwable {
+    public void sending(SubDataClient client) {
         sent = true;
     }
 

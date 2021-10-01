@@ -31,7 +31,7 @@ public class UnsignedData {
     public static long resign(byte... bytes) {
         long signed = 0;
         for (int i = bytes.length; i > 0; i--) {
-            signed += (bytes[i - 1] & 0xFF) << ((bytes.length - i) * 8);
+            signed += (long) (bytes[i - 1] & 0xFF) << ((bytes.length - i) * 8);
         }
         return signed;
     }

@@ -229,8 +229,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void unregisterPacket(PacketIn packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        List<Integer> search = new ArrayList<Integer>();
-        search.addAll(pIn.keySet());
+        List<Integer> search = new ArrayList<>(pIn.keySet());
         for (int id : search) if (pIn.get(id).equals(packet) &&  id < MAX_PACKET_ID) {
             pIn.remove(id);
         }
@@ -255,7 +254,7 @@ public class SubDataProtocol extends DataProtocol {
      */
     public void unregisterPacket(Class<? extends PacketOut> packet) {
         if (Util.isNull(packet)) throw new NullPointerException();
-        if (pOut.keySet().contains(packet) && pOut.get(packet) < MAX_PACKET_ID) pOut.remove(packet);
+        if (pOut.containsKey(packet) && pOut.get(packet) < MAX_PACKET_ID) pOut.remove(packet);
     }
 
     /**

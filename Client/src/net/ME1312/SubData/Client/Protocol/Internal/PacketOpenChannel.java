@@ -10,8 +10,8 @@ import net.ME1312.SubData.Client.SubDataSender;
  * Open SubChannel Packet
  */
 public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private String tracker;
-    private boolean response;
+    private final String tracker;
+    private final boolean response;
 
     /**
      * New PacketOpenChannel (Out)

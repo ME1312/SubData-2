@@ -20,8 +20,8 @@ import java.util.UUID;
  * Packet Forward Packet
  */
 public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
-    private PacketOut packet;
-    private UUID id;
+    private final PacketOut packet;
+    private final UUID id;
 
     /**
      * New PacketForwardPacket (Out)

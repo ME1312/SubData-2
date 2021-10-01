@@ -64,7 +64,7 @@ public class PacketRecieveMessage implements PacketStreamIn {
         HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataProtocol.class.getDeclaredField("mIn"), client.getServer().getProtocol());
 
         if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + ((channel == null)?"null":"\""+channel+"\"") + ", " + ((handle == null)?"null":"\""+handle+"\"") + ", " + ((version == null)?"null":"\""+version+"\"") + "]");
-        if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
+        if (!mIn.containsKey(channel) || !mIn.get(channel).containsKey(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
         if (!message.isCompatible(Version.fromString(version))) throw new IllegalMessageException("This handler does not support message version \"" + message.version().toFullString() + "\": [" + message.getClass().getCanonicalName() + ", \"" + version + "\"]");

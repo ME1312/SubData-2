@@ -13,8 +13,8 @@ import java.util.UUID;
  * Download Client List Packet
  */
 public class PacketDownloadClientList implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private String tracker;
-    private UUID request;
+    private final String tracker;
+    private final UUID request;
 
     /**
      * New PacketDownloadClientList (Out)

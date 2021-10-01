@@ -34,21 +34,21 @@ import static net.ME1312.SubData.Server.Library.DisconnectReason.*;
  * SubData Client Class
  */
 public class SubDataClient extends DataClient {
-    private Socket socket;
-    private InetSocketAddress address;
+    private final Socket socket;
+    private final InetSocketAddress address;
     private ClientHandler handler;
-    private InputStreamL1 in;
-    private OutputStreamL1 out;
-    private ExecutorService writer;
-    private HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
+    private final InputStreamL1 in;
+    private final OutputStreamL1 out;
+    private final ExecutorService writer;
+    private final HashMap<ConnectionState, LinkedList<PacketOut>> statequeue;
     private Runnable readc;
-    private Cipher cipher = NEH.get();
-    private int cipherlevel = 0;
-    private SubDataServer subdata;
+    private final Cipher cipher = NEH.get();
+    private final int cipherlevel = 0;
+    private final SubDataServer subdata;
     private int bs;
     private SubDataClient next;
     private ConnectionState state;
-    private DisconnectReason isdcr;
+    private final DisconnectReason isdcr;
     private Timer timeout, heartbeat;
     private Object asr;
 
@@ -59,15 +59,15 @@ public class SubDataClient extends DataClient {
         state = PRE_INITIALIZATION;
         socket = client;
         address = new InetSocketAddress(client.getInetAddress(), client.getPort());
-        writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address.toString() + ')'));
-        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataServer::Block_Writer(" + address.toString() + ')');
+        writer = Executors.newSingleThreadExecutor(r -> new Thread(r, "SubDataServer::Data_Writer(" + address + ')'));
+        out = new OutputStreamL1(subdata.log, client.getOutputStream(), bs, () -> close(CONNECTION_INTERRUPTED), "SubDataServer::Block_Writer(" + address + ')');
         in = new InputStreamL1(new BufferedInputStream(client.getInputStream()), () -> close(CONNECTION_INTERRUPTED), e -> {
-            DebugUtil.logException(new ProtocolException(address.toString() + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
+            DebugUtil.logException(new ProtocolException(address + ": Received invalid L1 control character: " + DebugUtil.toHex(0xFF, e)), subdata.log);
             close(PROTOCOL_MISMATCH);
         });
         statequeue = new HashMap<>();
         isdcr = PROTOCOL_MISMATCH;
-        Timer timeout = this.timeout = new Timer("SubDataServer::Handshake_Timeout(" + address.toString() + ')');
+        Timer timeout = this.timeout = new Timer("SubDataServer::Handshake_Timeout(" + address + ')');
         timeout.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -77,7 +77,7 @@ public class SubDataClient extends DataClient {
                 timeout.cancel();
             }
         }, subdata.timeout.value());
-        heartbeat = new Timer("SubDataServer::Connection_Heartbeat(" + address.toString() + ')');
+        heartbeat = new Timer("SubDataServer::Connection_Heartbeat(" + address + ')');
         heartbeat.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -149,7 +149,7 @@ public class SubDataClient extends DataClient {
                     forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
-                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!pIn.containsKey(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
                     PacketIn packet = pIn.get(id);
                     if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": This handler does not support packet version " + DebugUtil.toHex(0xFFFF, packet.version()) + ": [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
 
@@ -179,7 +179,7 @@ public class SubDataClient extends DataClient {
                     }
                 }
             }
-        } catch (InterruptedIOException e) {
+        } catch (InterruptedIOException ignored) {
         } catch (ProtocolException e) {
             DebugUtil.logException(e, subdata.log);
             close(PROTOCOL_MISMATCH);
@@ -253,7 +253,7 @@ public class SubDataClient extends DataClient {
             };
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
-            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
+            if (!pOut.containsKey(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
             if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(address.toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
             data.write(UnsignedData.unsign((long) pOut.get(next.getClass()), 2));
@@ -332,7 +332,7 @@ public class SubDataClient extends DataClient {
         }
     }
     private void sendPacketLater(PacketOut packet, ConnectionState state) {
-        LinkedList<PacketOut> prequeue = (this.statequeue.keySet().contains(state))?this.statequeue.get(state):new LinkedList<PacketOut>();
+        LinkedList<PacketOut> prequeue = (this.statequeue.containsKey(state))?this.statequeue.get(state):new LinkedList<PacketOut>();
         prequeue.add(packet);
         this.statequeue.put(state, prequeue);
     }
@@ -450,7 +450,7 @@ public class SubDataClient extends DataClient {
         if (state.asInt() < CLOSING.asInt() || next != null) throw new IllegalStateException("Cannot override existing data stream");
 
         next = client;
-        if (statequeue.keySet().contains(CLOSED)) {
+        if (statequeue.containsKey(CLOSED)) {
             for (PacketOut packet : statequeue.get(CLOSED)) next.sendPacket(packet);
             statequeue.remove(CLOSED);
         }
@@ -508,7 +508,7 @@ public class SubDataClient extends DataClient {
                 setHandler(null);
                 handler = tmp;
             }
-            if (subdata.getClients().values().contains(this)) subdata.removeClient(this);
+            if (subdata.getClients().containsValue(this)) subdata.removeClient(this);
 
             final DisconnectReason freason = reason;
             subdata.scheduler.run(() -> {

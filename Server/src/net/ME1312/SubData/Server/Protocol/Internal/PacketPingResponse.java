@@ -23,7 +23,7 @@ import static net.ME1312.SubData.Server.Protocol.Internal.PacketPing.data;
  */
 public class PacketPingResponse implements PacketStreamOut, PacketStreamIn {
     private UUID tracker;
-    private long init, queue;
+    private long init;
 
     /**
      * New PacketPingResponse (In)
@@ -42,7 +42,7 @@ public class PacketPingResponse implements PacketStreamOut, PacketStreamIn {
 
     @Override
     public void send(SubDataClient client, OutputStream out) throws Throwable {
-        queue = Calendar.getInstance().getTime().getTime();
+        long queue = Calendar.getInstance().getTime().getTime();
 
         out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(tracker.getMostSignificantBits()).array());
         out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(tracker.getLeastSignificantBits()).array());

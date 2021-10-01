@@ -64,7 +64,7 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
             UUID id = new UUID(id_p1, id_p2);
             if (client.getServer().getClient(id) != null) {
                 client.getServer().getClient(id).sendPacket(new PacketForwardPacket(client, in));
-            } else throw new IllegalArgumentException("Cannot forward to invalid Destination ID: [" + id.toString() + "]");
+            } else throw new IllegalArgumentException("Cannot forward to invalid Destination ID: [" + id + "]");
         } else {
             throw new IllegalArgumentException("Invalid UUID data for Destination ID: [" + id_p1 + ", " + id_p2 + "]");
         }

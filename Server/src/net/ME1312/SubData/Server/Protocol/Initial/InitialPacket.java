@@ -35,7 +35,7 @@ public interface InitialPacket {
             Util.<Logger>reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()).info(client.getAddress().toString() + " has logged in");
 
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), client);
-            if (queue.keySet().contains(READY)) {
+            if (queue.containsKey(READY)) {
                 if (queue.get(READY).size() > 0) {
                     client.sendPacket(queue.get(READY).toArray(new PacketOut[0]));
                 }

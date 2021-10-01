@@ -15,7 +15,7 @@ import java.util.UUID;
  * Download Client List Packet
  */
 public class PacketDownloadClientList implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private static HashMap<String, Callback<ObjectMap<String>>[]> callbacks = new HashMap<String, Callback<ObjectMap<String>>[]>();
+    private static final HashMap<String, Callback<ObjectMap<String>>[]> callbacks = new HashMap<String, Callback<ObjectMap<String>>[]>();
     private String tracker;
     private UUID id;
 

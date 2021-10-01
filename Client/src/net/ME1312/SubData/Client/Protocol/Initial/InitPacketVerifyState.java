@@ -32,9 +32,9 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Pack
             HashMap<ConnectionState, LinkedList<PacketOut>> queue = Util.reflect(SubDataClient.class.getDeclaredField("statequeue"), sender.getConnection());
 
             data.set(0x0000, true);
-            data.set(0x0001, postinit || (queue.keySet().contains(POST_INITIALIZATION) && queue.get(POST_INITIALIZATION).size() > 0));
+            data.set(0x0001, postinit || (queue.containsKey(POST_INITIALIZATION) && queue.get(POST_INITIALIZATION).size() > 0));
             if (data.getBoolean(0x0001)) {
-                if (queue.keySet().contains(POST_INITIALIZATION)) {
+                if (queue.containsKey(POST_INITIALIZATION)) {
                     if (queue.get(POST_INITIALIZATION).size() > 0) {
                         sender.getConnection().sendPacket(queue.get(POST_INITIALIZATION).toArray(new PacketOut[0]));
                     }
