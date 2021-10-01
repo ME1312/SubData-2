@@ -27,9 +27,9 @@ import java.util.logging.Logger;
  * SubData Server Class
  */
 public class SubDataServer extends DataServer {
-    private HashMap<UUID, SubDataClient> clients = new HashMap<UUID, SubDataClient>();
-    private ServerSocket server;
-    private String address;
+    private final HashMap<UUID, SubDataClient> clients = new HashMap<UUID, SubDataClient>();
+    private final ServerSocket server;
+    private final String address;
     SubDataProtocol protocol;
     Value<Long> timeout;
     Callback<Runnable> scheduler;
@@ -139,9 +139,8 @@ public class SubDataServer extends DataServer {
      * Add a Client to the Network
      *
      * @param client Client to add
-     * @throws IOException
      */
-    private SubDataClient addClient(SubDataClient client) throws IOException {
+    private SubDataClient addClient(SubDataClient client) {
         boolean result = true;
         Util.isException(() -> Util.reflect(DataClient.class.getDeclaredField("id"), client, Util.getNew(clients.keySet(), UUID::randomUUID)));
         LinkedList<ReturnCallback<DataClient, Boolean>> events = new LinkedList<>(on.connect);
@@ -180,7 +179,7 @@ public class SubDataServer extends DataServer {
 
     public void removeClient(UUID id) {
         if (Util.isNull(id)) throw new NullPointerException();
-        if (clients.keySet().contains(id)) {
+        if (clients.containsKey(id)) {
             SubDataClient client = clients.get(id);
             clients.remove(id);
             client.close();

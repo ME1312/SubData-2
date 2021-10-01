@@ -14,6 +14,9 @@ import java.util.regex.Pattern;
  * SubData Server API Class
  */
 public abstract class DataServer {
+    private final static Pattern REG_ADRESS_PATTERN = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$");
+    private final static Pattern REG_ALLOWED_PATTERN = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:/(\\d{1,2}))?$");
+
     public final Events on = new Events();
     HashMap<String, Boolean> whitelist = new HashMap<String, Boolean>();
 
@@ -106,25 +109,24 @@ public abstract class DataServer {
     }
 
     boolean isWhitelisted(InetAddress address) {
-        List<String> whitelist = new ArrayList<String>();
-        whitelist.addAll(getProtocol().whitelist);
+        List<String> whitelist = new ArrayList<>(getProtocol().whitelist);
         for (String next : this.whitelist.keySet()) if (this.whitelist.get(next)) {
             whitelist.add(next);
         } else whitelist.remove(next);
 
         boolean whitelisted = false;
-        Matcher regaddress = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$").matcher(address.getHostAddress());
-        if (regaddress.find()) {
+        Matcher regMatcher = REG_ADRESS_PATTERN.matcher(address.getHostAddress());
+        if (regMatcher.find()) {
             int rip = 0;
             for (int i = 1; i <= 4; i++) {
-                int octet = Integer.valueOf(regaddress.group(i));
+                int octet = Integer.parseInt(regMatcher.group(i));
                 if (octet > 255) octet = 255;
 
                 rip = (rip << 8) + octet;
             }
 
             for (String allowed : whitelist) if (!whitelisted) {
-                Matcher regallowed = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})(?:\\/(\\d{1,2}))?$").matcher(allowed);
+                Matcher regallowed = REG_ALLOWED_PATTERN.matcher(allowed);
                 if (regallowed.find()) {
                     int sub = (regallowed.group(5) == null)?32:Integer.parseInt(regallowed.group(5));
                     if (sub > 32) sub = 32;
@@ -133,7 +135,7 @@ public abstract class DataServer {
 
                     int aip = 0;
                     for (int i = 1; i <= 4; i++) {
-                        int octet = Integer.valueOf(regallowed.group(i));
+                        int octet = Integer.parseInt(regallowed.group(i));
                         if (octet > 255) octet = 255;
 
                         aip = (aip << 8) + octet;

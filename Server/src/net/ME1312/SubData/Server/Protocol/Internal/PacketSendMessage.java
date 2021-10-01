@@ -33,7 +33,7 @@ public class PacketSendMessage implements PacketStreamOut {
     public void send(SubDataClient client, OutputStream data) throws Throwable {
         HashMap<Class<? extends MessageOut>, Pair<String, String>> mOut = Util.reflect(DataProtocol.class.getDeclaredField("mOut"), client.getServer().getProtocol());
 
-        if (!mOut.keySet().contains(message.getClass())) throw new IllegalMessageException("Could not find handle for message: " + message.getClass().getCanonicalName());
+        if (!mOut.containsKey(message.getClass())) throw new IllegalMessageException("Could not find handle for message: " + message.getClass().getCanonicalName());
         if (message.version() == null || message.version().toString().length() == 0) throw new IllegalMessageException("Cannot send message with null version: " + message.getClass().getCanonicalName());
 
         EscapedOutputStream out = new EscapedOutputStream(data, '\u001B', '\u0003');

@@ -83,7 +83,7 @@ public class PacketPing implements PacketStreamOut, PacketStreamIn {
 
         in.close();
         client.sendPacket(new PacketPingResponse(new UUID(id_p1, id_p2)));
-        Long.valueOf(unused);
+        Long.valueOf(unused); //TODO Remove this
     }
 
     @Override

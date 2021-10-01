@@ -14,7 +14,7 @@ import java.util.UUID;
  * Open SubChannel Packet
  */
 public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private static HashMap<String, Callback<SubDataClient>[]> callbacks = new HashMap<String, Callback<SubDataClient>[]>();
+    private static final HashMap<String, Callback<SubDataClient>[]> callbacks = new HashMap<String, Callback<SubDataClient>[]>();
     private String tracker;
 
     /**

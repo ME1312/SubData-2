@@ -260,8 +260,8 @@ public final class RSA implements net.ME1312.SubData.Server.Cipher, CipherFactor
     public static void addCipher(String handle, ReturnRunnable<Pair<net.ME1312.SubData.Server.Cipher, String>> generator, ReturnCallback<String, net.ME1312.SubData.Server.Cipher> parser) {
         if (Util.isNull(generator)) throw new NullPointerException();
         handle = handle.toUpperCase();
-        if (!forwardG.keySet().contains(handle)) forwardG.put(handle, generator);
-        if (!forwardP.keySet().contains(handle)) forwardP.put(handle, parser);
+        if (!forwardG.containsKey(handle)) forwardG.put(handle, generator);
+        if (!forwardP.containsKey(handle)) forwardP.put(handle, parser);
     }
 
     public static void removeCipher(String handle) {
