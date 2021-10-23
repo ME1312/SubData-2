@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Server.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.SubData.Server.Library.PingResponse;
 import net.ME1312.SubData.Server.Protocol.PacketStreamIn;
 import net.ME1312.SubData.Server.Protocol.PacketStreamOut;
@@ -14,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static net.ME1312.SubData.Server.Protocol.Internal.PacketPing.callbacks;
 import static net.ME1312.SubData.Server.Protocol.Internal.PacketPing.data;
@@ -90,7 +90,7 @@ public class PacketPingResponse implements PacketStreamOut, PacketStreamIn {
             timings[0] = data.get(id).init;
             timings[1] = data.get(id).queue;
 
-            for (Callback<PingResponse> callback : callbacks.get(id)) callback.run(new PingResponse(timings));
+            for (Consumer<PingResponse> callback : callbacks.get(id)) callback.accept(new PingResponse(timings));
             callbacks.remove(id);
             data.remove(id);
         }

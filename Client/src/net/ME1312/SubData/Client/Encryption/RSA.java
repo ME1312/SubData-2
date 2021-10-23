@@ -1,7 +1,5 @@
 package net.ME1312.SubData.Client.Encryption;
 
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
-import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
 import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Container.Value;
@@ -20,6 +18,8 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * RSA Encryption Handler Class
@@ -27,8 +27,8 @@ import java.util.HashMap;
 public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactory {
 
     // Supported Forward Ciphers
-    private static final HashMap<String, ReturnRunnable<Pair<net.ME1312.SubData.Client.Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<Pair<net.ME1312.SubData.Client.Cipher, String>>>();
-    private static final HashMap<String, ReturnCallback<String, net.ME1312.SubData.Client.Cipher>> forwardP = new HashMap<String, ReturnCallback<String, net.ME1312.SubData.Client.Cipher>>();
+    private static final HashMap<String, Supplier<Pair<net.ME1312.SubData.Client.Cipher, String>>> forwardG = new HashMap<String, Supplier<Pair<net.ME1312.SubData.Client.Cipher, String>>>();
+    private static final HashMap<String, Function<String, net.ME1312.SubData.Client.Cipher>> forwardP = new HashMap<String, Function<String, net.ME1312.SubData.Client.Cipher>>();
 
     // RSA specification
     private static final String CIPHER_SPEC = "RSA/ECB/PKCS1Padding";
@@ -247,16 +247,16 @@ public final class RSA implements net.ME1312.SubData.Client.Cipher, CipherFactor
 
     @Override
     public Pair<net.ME1312.SubData.Client.Cipher, String> newCipher(String handle) {
-        return forwardG.getOrDefault(handle.toUpperCase(), () -> null).run();
+        return forwardG.getOrDefault(handle.toUpperCase(), () -> null).get();
     }
 
     @Override
     public net.ME1312.SubData.Client.Cipher getCipher(String handle, String key) {
-        return forwardP.getOrDefault(handle.toUpperCase(), token -> null).run(key);
+        return forwardP.getOrDefault(handle.toUpperCase(), token -> null).apply(key);
     }
 
-    public static void addCipher(String handle, ReturnRunnable<Pair<net.ME1312.SubData.Client.Cipher, String>> generator, ReturnCallback<String, net.ME1312.SubData.Client.Cipher> parser) {
-        if (Util.isNull(generator)) throw new NullPointerException();
+    public static void addCipher(String handle, Supplier<Pair<net.ME1312.SubData.Client.Cipher, String>> generator, Function<String, net.ME1312.SubData.Client.Cipher> parser) {
+        Util.nullpo(generator);
         handle = handle.toUpperCase();
         if (!forwardG.containsKey(handle)) forwardG.put(handle, generator);
         if (!forwardP.containsKey(handle)) forwardP.put(handle, parser);

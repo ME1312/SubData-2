@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Client;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.Galaxi.Library.Version.Version;
@@ -17,6 +16,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -74,7 +74,7 @@ public class SubDataProtocol extends DataProtocol {
      * @see SubDataClient#openChannel()
      * @throws IOException
      */
-    protected SubDataClient sub(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
+    protected SubDataClient sub(Consumer<Runnable> scheduler, Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
         return open(scheduler, logger, address, port, login);
     }
 
@@ -88,7 +88,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param login Login Data
      * @throws IOException
      */
-    public SubDataClient open(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
+    public SubDataClient open(Consumer<Runnable> scheduler, Logger logger, InetAddress address, int port, ObjectMap<?> login) throws IOException {
         return new SubDataClient(this, scheduler, logger, address, port, login);
     }
 
@@ -101,7 +101,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param port Port Number
      * @throws IOException
      */
-    public SubDataClient open(Callback<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
+    public SubDataClient open(Consumer<Runnable> scheduler, Logger logger, InetAddress address, int port) throws IOException {
         return open(scheduler, logger, address, port, null);
     }
 
@@ -197,7 +197,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param handle Handle to Bind
      */
     public void registerCipher(String handle, Cipher cipher) {
-        if (Util.isNull(cipher)) throw new NullPointerException();
+        Util.nullpo(cipher);
         if (!handle.equalsIgnoreCase("NULL")) ciphers.put(handle.toUpperCase(), cipher);
     }
 
@@ -217,7 +217,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param packet PacketIn to register
      */
     public void registerPacket(int id, PacketIn packet) {
-        if (Util.isNull(packet)) throw new NullPointerException();
+        Util.nullpo(packet);
         if (id > MAX_PACKET_ID || id < MIN_PACKET_ID) throw new IllegalArgumentException("Packet ID is not in range (" + DebugUtil.toHex(0xFFFF, MIN_PACKET_ID) + " to " + DebugUtil.toHex(0xFFFF, MAX_PACKET_ID) + "): " + DebugUtil.toHex(0xFFFF, id));
         pIn.put(id, packet);
     }
@@ -228,7 +228,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param packet PacketIn to unregister
      */
     public void unregisterPacket(PacketIn packet) {
-        if (Util.isNull(packet)) throw new NullPointerException();
+        Util.nullpo(packet);
         List<Integer> search = new ArrayList<>(pIn.keySet());
         for (int id : search) if (pIn.get(id).equals(packet) &&  id < MAX_PACKET_ID) {
             pIn.remove(id);
@@ -242,7 +242,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param packet PacketOut to register
      */
     public void registerPacket(int id, Class<? extends PacketOut> packet) {
-        if (Util.isNull(packet)) throw new NullPointerException();
+        Util.nullpo(packet);
         if (id > MAX_PACKET_ID || id < MIN_PACKET_ID) throw new IllegalArgumentException("Packet ID is not in range (" + DebugUtil.toHex(0xFFFF, MIN_PACKET_ID) + " to " + DebugUtil.toHex(0xFFFF, MAX_PACKET_ID) + "): " + DebugUtil.toHex(0xFFFF, id));
         pOut.put(packet, id);
     }
@@ -253,7 +253,7 @@ public class SubDataProtocol extends DataProtocol {
      * @param packet PacketOut to unregister
      */
     public void unregisterPacket(Class<? extends PacketOut> packet) {
-        if (Util.isNull(packet)) throw new NullPointerException();
+        Util.nullpo(packet);
         if (pOut.containsKey(packet) && pOut.get(packet) < MAX_PACKET_ID) pOut.remove(packet);
     }
 

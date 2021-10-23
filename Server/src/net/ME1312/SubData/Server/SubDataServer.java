@@ -1,9 +1,8 @@
 package net.ME1312.SubData.Server;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Container.Value;
+import net.ME1312.Galaxi.Library.Try;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
 import net.ME1312.SubData.Server.Library.DebugUtil;
@@ -21,6 +20,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 /**
@@ -32,12 +33,12 @@ public class SubDataServer extends DataServer {
     private final String address;
     SubDataProtocol protocol;
     Value<Long> timeout;
-    Callback<Runnable> scheduler;
+    Consumer<Runnable> scheduler;
     String cipher;
     Logger log;
 
-    SubDataServer(SubDataProtocol protocol, Callback<Runnable> scheduler, Logger log, InetAddress address, int port, String cipher) throws IOException {
-        if (Util.isNull(protocol)) throw new NullPointerException();
+    SubDataServer(SubDataProtocol protocol, Consumer<Runnable> scheduler, Logger log, InetAddress address, int port, String cipher) throws IOException {
+        Util.nullpo(protocol);
         if (address == null) {
             this.server = new ServerSocket(port, protocol.MAX_QUEUE);
             this.address = "/0.0.0.0:" + port;
@@ -60,7 +61,7 @@ public class SubDataServer extends DataServer {
                 last = protocol.ciphers.get(next.toUpperCase());
             } else if (last instanceof CipherFactory) {
                 final Cipher lastF = last;
-                last = Util.getDespiteException(() -> ((CipherFactory) lastF).newCipher(next.toUpperCase()).key(), null);
+                last = Try.all.get(() -> ((CipherFactory) lastF).newCipher(next.toUpperCase()).key());
             } else {
                 last = null;
             }
@@ -123,7 +124,7 @@ public class SubDataServer extends DataServer {
      * @throws IOException
      */
     private SubDataClient addClient(Socket socket) throws IOException {
-        if (Util.isNull(socket)) throw new NullPointerException();
+        Util.nullpo(socket);
         if (isWhitelisted(socket.getInetAddress())) {
             SubDataClient client = addClient(new SubDataClient(this, socket));
             if (client != null) client.read();
@@ -142,10 +143,10 @@ public class SubDataServer extends DataServer {
      */
     private SubDataClient addClient(SubDataClient client) {
         boolean result = true;
-        Util.isException(() -> Util.reflect(DataClient.class.getDeclaredField("id"), client, Util.getNew(clients.keySet(), UUID::randomUUID)));
-        LinkedList<ReturnCallback<DataClient, Boolean>> events = new LinkedList<>(on.connect);
-        for (ReturnCallback<DataClient, Boolean> next : events) try {
-            if (next != null) result = next.run(client) != Boolean.FALSE && result;
+        Try.all.run(() -> Util.reflect(DataClient.class.getDeclaredField("id"), client, Util.getNew(clients.keySet(), UUID::randomUUID)));
+        LinkedList<Function<DataClient, Boolean>> events = new LinkedList<>(on.connect);
+        for (Function<DataClient, Boolean> next : events) try {
+            if (next != null) result = next.apply(client) != Boolean.FALSE && result;
         } catch (Throwable e) {
             DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), log);
         }
@@ -164,7 +165,7 @@ public class SubDataServer extends DataServer {
     }
 
     public SubDataClient getClient(UUID id) {
-        if (Util.isNull(id)) throw new NullPointerException();
+        Util.nullpo(id);
         return clients.get(id);
     }
 
@@ -173,12 +174,12 @@ public class SubDataServer extends DataServer {
     }
 
     public void removeClient(DataClient client) {
-        if (Util.isNull(client)) throw new NullPointerException();
+        Util.nullpo(client);
         removeClient(client.getID());
     }
 
     public void removeClient(UUID id) {
-        if (Util.isNull(id)) throw new NullPointerException();
+        Util.nullpo(id);
         if (clients.containsKey(id)) {
             SubDataClient client = clients.get(id);
             clients.remove(id);
@@ -188,9 +189,9 @@ public class SubDataServer extends DataServer {
 
     public void close() throws IOException {
         boolean result = true;
-        LinkedList<ReturnCallback<DataServer, Boolean>> events = new LinkedList<>(on.close);
-        for (ReturnCallback<DataServer, Boolean> next : events) try {
-            if (next != null) result = next.run(this) != Boolean.FALSE && result;
+        LinkedList<Function<DataServer, Boolean>> events = new LinkedList<>(on.close);
+        for (Function<DataServer, Boolean> next : events) try {
+            if (next != null) result = next.apply(this) != Boolean.FALSE && result;
         } catch (Throwable e) {
             DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), log);
         }
@@ -199,14 +200,14 @@ public class SubDataServer extends DataServer {
             while (clients.size() > 0) {
                 SubDataClient client = (SubDataClient) clients.values().toArray()[0];
                 client.close();
-                Util.isException(client::waitFor);
+                Try.all.run(client::waitFor);
             }
             server.close();
 
-            scheduler.run(() -> {
-                LinkedList<Callback<DataServer>> events2 = new LinkedList<>(on.closed);
-                for (Callback<DataServer> next : events2) try {
-                    if (next != null) next.run(this);
+            scheduler.accept(() -> {
+                LinkedList<Consumer<DataServer>> events2 = new LinkedList<>(on.closed);
+                for (Consumer<DataServer> next : events2) try {
+                    if (next != null) next.accept(this);
                 } catch (Throwable e) {
                     DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), log);
                 }

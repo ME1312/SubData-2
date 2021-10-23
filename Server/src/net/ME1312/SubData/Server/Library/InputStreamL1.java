@@ -1,9 +1,9 @@
 package net.ME1312.SubData.Server.Library;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.function.Consumer;
 
 import static net.ME1312.SubData.Server.Library.DataSize.*;
 
@@ -12,12 +12,12 @@ import static net.ME1312.SubData.Server.Library.DataSize.*;
  */
 public class InputStreamL1 {
     private final Runnable shutdown;
-    private final Callback<Integer> error;
+    private final Consumer<Integer> error;
     private final InputStream in;
     private Runnable reset, close;
     private DataInterface open;
 
-    public InputStreamL1(InputStream in, Runnable shutdown, Callback<Integer> error) {
+    public InputStreamL1(InputStream in, Runnable shutdown, Consumer<Integer> error) {
         this.in = in;
         this.shutdown = shutdown;
         this.error = error;
@@ -121,7 +121,7 @@ public class InputStreamL1 {
                             shutdown.run();
                             return true;
                         default:
-                            error.run(b);
+                            error.accept(b);
                             return true;
                     }
                     b = in.read();

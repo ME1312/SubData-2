@@ -1,12 +1,12 @@
 package net.ME1312.SubData.Server;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Util;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,9 +24,9 @@ public abstract class DataServer {
      * SubData Server Event API Class
      */
     public static class Events {
-        LinkedList<ReturnCallback<DataClient, Boolean>> connect = new LinkedList<ReturnCallback<DataClient, Boolean>>();
-        LinkedList<ReturnCallback<DataServer, Boolean>> close = new LinkedList<ReturnCallback<DataServer, Boolean>>();
-        LinkedList<Callback<DataServer>> closed = new LinkedList<Callback<DataServer>>();
+        LinkedList<Function<DataClient, Boolean>> connect = new LinkedList<Function<DataClient, Boolean>>();
+        LinkedList<Function<DataServer, Boolean>> close = new LinkedList<Function<DataServer, Boolean>>();
+        LinkedList<Consumer<DataServer>> closed = new LinkedList<Consumer<DataServer>>();
         private Events() {}
 
         /**
@@ -35,7 +35,7 @@ public abstract class DataServer {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void connect(ReturnCallback<DataClient, Boolean>... callbacks) {
+        public final void connect(Function<DataClient, Boolean>... callbacks) {
             connect.addAll(Arrays.asList(callbacks));
         }
 
@@ -45,7 +45,7 @@ public abstract class DataServer {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void close(ReturnCallback<DataServer, Boolean>... callbacks) {
+        public final void close(Function<DataServer, Boolean>... callbacks) {
             close.addAll(Arrays.asList(callbacks));
         }
 
@@ -55,7 +55,7 @@ public abstract class DataServer {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void closed(Callback<DataServer>... callbacks) {
+        public final void closed(Consumer<DataServer>... callbacks) {
             closed.addAll(Arrays.asList(callbacks));
         }
     }
@@ -104,7 +104,7 @@ public abstract class DataServer {
      * @param address Address to allow
      */
     public void whitelist(String address) {
-        if (Util.isNull(address)) throw new NullPointerException();
+        Util.nullpo(address);
         whitelist.put(address, true);
     }
 
@@ -155,7 +155,7 @@ public abstract class DataServer {
      * @param address Address to deny
      */
     public void unwhitelist(String address) {
-        if (Util.isNull(address)) throw new NullPointerException();
+        Util.nullpo(address);
 
         if (getProtocol().whitelist.contains(address)) {
             whitelist.put(address, false);

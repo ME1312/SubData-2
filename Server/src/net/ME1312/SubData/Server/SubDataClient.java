@@ -1,10 +1,9 @@
 package net.ME1312.SubData.Server;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container.ContainedPair;
 import net.ME1312.Galaxi.Library.Container.Container;
 import net.ME1312.Galaxi.Library.Container.Pair;
+import net.ME1312.Galaxi.Library.Try;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Encryption.NEH;
 import net.ME1312.SubData.Server.Library.*;
@@ -26,6 +25,8 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.*;
 import static net.ME1312.SubData.Server.Library.DisconnectReason.*;
@@ -53,7 +54,7 @@ public class SubDataClient extends DataClient {
     private Object asr;
 
     SubDataClient(SubDataServer subdata, Socket client) throws IOException {
-        if (Util.isNull(subdata, client)) throw new NullPointerException();
+        Util.nullpo(subdata, client);
         this.subdata = subdata;
         this.bs = subdata.protocol.bs;
         state = PRE_INITIALIZATION;
@@ -160,7 +161,7 @@ public class SubDataClient extends DataClient {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
                         readc = () -> open.value = false;
-                        subdata.scheduler.run(() -> {
+                        subdata.scheduler.accept(() -> {
                             try {
                                 packet.receive(this);
 
@@ -169,10 +170,10 @@ public class SubDataClient extends DataClient {
                                 } else forward.close();
                             } catch (Throwable e) {
                                 DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet handler"), subdata.log);
-                                Util.isException(forward::close);
+                                Try.all.run(forward::close);
 
                                 if (state.asInt() <= INITIALIZATION.asInt())
-                                    Util.isException(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
+                                    Try.all.run(() -> close(PROTOCOL_MISMATCH)); // Issues during the init stages are signs of a PROTOCOL_MISMATCH
                             }
                         });
                         while (open.value) Thread.sleep(125);
@@ -203,7 +204,7 @@ public class SubDataClient extends DataClient {
                 }, () -> {
                     if (!isClosed()) {
                         SubDataClient.this.read();
-                    } else Util.isException(() -> close(CONNECTION_INTERRUPTED));
+                    } else Try.all.run(() -> close(CONNECTION_INTERRUPTED));
                 });
                 
                 PipedInputStream data = new PipedInputStream(1024);
@@ -261,7 +262,7 @@ public class SubDataClient extends DataClient {
             data.flush();
 
             // Step 3 // Invoke the Packet
-            subdata.scheduler.run(() -> {
+            subdata.scheduler.accept(() -> {
                 try {
                     next.sending(this);
 
@@ -270,13 +271,13 @@ public class SubDataClient extends DataClient {
                     } else forward.close();
                 } catch (Throwable e) {
                     DebugUtil.logException(new InvocationTargetException(e, address.toString() + ": Exception while running packet writer"), subdata.log);
-                    Util.isException(forward::close);
+                    Try.all.run(forward::close);
                 }
             });
             while (open.value) Thread.sleep(125);
         } catch (Throwable e) {
             DebugUtil.logException(e, subdata.log);
-            Util.isException(data::close);
+            Try.all.run(data::close);
         }
     }
     void write(PacketOut packet) {
@@ -347,8 +348,8 @@ public class SubDataClient extends DataClient {
     }
 
     @Override
-    public void ping(Callback<PingResponse> response) {
-        if (Util.isNull(response)) throw new NullPointerException();
+    public void ping(Consumer<PingResponse> response) {
+        Util.nullpo(response);
         sendPacket(new PacketPing(response));
     }
 
@@ -426,8 +427,8 @@ public class SubDataClient extends DataClient {
 
     @Override
     @Deprecated
-    public void newChannel(Callback<DataClient> client) {
-        openChannel(client::run);
+    public void newChannel(Consumer<DataClient> client) {
+        openChannel(client::accept);
     }
 
     /**
@@ -435,7 +436,7 @@ public class SubDataClient extends DataClient {
      *
      * @return New SubData Channel
      */
-    public void openChannel(Callback<SubDataClient> client) {
+    public void openChannel(Consumer<SubDataClient> client) {
         sendPacket(new PacketOpenChannel(client));
     }
 
@@ -445,7 +446,7 @@ public class SubDataClient extends DataClient {
      * @param client Client
      */
     public void reconnect(SubDataClient client) {
-        if (Util.isNull(client)) throw new NullPointerException();
+        Util.nullpo(client);
         if (client == this) throw new IllegalArgumentException("Cannot reconnect to 'this'");
         if (state.asInt() < CLOSING.asInt() || next != null) throw new IllegalStateException("Cannot override existing data stream");
 
@@ -459,9 +460,9 @@ public class SubDataClient extends DataClient {
     public void close() {
         if (state.asInt() < CLOSING.asInt() && !socket.isClosed()) {
             boolean result = true;
-            LinkedList<ReturnCallback<DataClient, Boolean>> events = new LinkedList<>(on.close);
-            for (ReturnCallback<DataClient, Boolean> next : events) try {
-                if (next != null) result = next.run(this) != Boolean.FALSE && result;
+            LinkedList<Function<DataClient, Boolean>> events = new LinkedList<>(on.close);
+            for (Function<DataClient, Boolean> next : events) try {
+                if (next != null) result = next.apply(this) != Boolean.FALSE && result;
             } catch (Throwable e) {
                 DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.log);
             }
@@ -511,10 +512,10 @@ public class SubDataClient extends DataClient {
             if (subdata.getClients().containsValue(this)) subdata.removeClient(this);
 
             final DisconnectReason freason = reason;
-            subdata.scheduler.run(() -> {
-                LinkedList<Callback<Pair<DisconnectReason, DataClient>>> events = new LinkedList<>(on.closed);
-                for (Callback<Pair<DisconnectReason, DataClient>> next : events) try {
-                    if (next != null) next.run(new ContainedPair<>(freason, this));
+            subdata.scheduler.accept(() -> {
+                LinkedList<Consumer<Pair<DisconnectReason, DataClient>>> events = new LinkedList<>(on.closed);
+                for (Consumer<Pair<DisconnectReason, DataClient>> next : events) try {
+                    if (next != null) next.accept(new ContainedPair<>(freason, this));
                 } catch (Throwable e) {
                     DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), subdata.log);
                 }

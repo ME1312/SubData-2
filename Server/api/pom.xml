@@ -20,7 +20,7 @@
         <dependency>
             <groupId>net.ME1312.Galaxi</groupId>
             <artifactId>GalaxiUtil</artifactId>
-            <version>21w08j</version>
+            <version>21w43b</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -33,7 +33,7 @@
     </dependencies>
 
     <build>
-        <directory>../../../out/compile/target/ServerAPI</directory>
+        <directory>../../out/compile/target/ServerAPI</directory>
         <sourceDirectory>src</sourceDirectory>
         <resources>
             <resource>

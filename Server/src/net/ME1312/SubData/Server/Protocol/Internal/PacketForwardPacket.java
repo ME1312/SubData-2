@@ -4,7 +4,6 @@ import net.ME1312.SubData.Server.Protocol.PacketStreamIn;
 import net.ME1312.SubData.Server.Protocol.PacketStreamOut;
 import net.ME1312.SubData.Server.SubDataClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;

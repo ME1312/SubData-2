@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Server.Protocol.Initial;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.DataClient;
 import net.ME1312.SubData.Server.Library.ConnectionState;
@@ -12,6 +11,7 @@ import net.ME1312.SubData.Server.SubDataServer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static net.ME1312.SubData.Server.Library.ConnectionState.READY;
@@ -42,9 +42,9 @@ public interface InitialPacket {
                 queue.remove(READY);
             }
 
-            LinkedList<Callback<DataClient>> events = new LinkedList<>(Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on));
-            for (Callback<DataClient> next : events) try {
-                if (next != null) next.run(client);
+            LinkedList<Consumer<DataClient>> events = new LinkedList<>(Util.reflect(DataClient.Events.class.getDeclaredField("ready"), client.on));
+            for (Consumer<DataClient> next : events) try {
+                if (next != null) next.accept(client);
             } catch (Throwable e) {
                 DebugUtil.logException(new InvocationTargetException(e, "Unhandled exception while running SubData Event"), Util.reflect(SubDataServer.class.getDeclaredField("log"), client.getServer()));
             }

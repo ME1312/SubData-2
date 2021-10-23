@@ -1,10 +1,10 @@
 package net.ME1312.SubData.Client;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.SubData.Client.Library.PingResponse;
 import net.ME1312.SubData.Client.Protocol.MessageOut;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * SubData Data Sender API Layout Class
@@ -16,7 +16,7 @@ public interface DataSender {
      *
      * @param response Ping Response
      */
-    void ping(Callback<PingResponse> response);
+    void ping(Consumer<PingResponse> response);
 
     /**
      * Send a message to the Sender

@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Client.Library;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.SubData.Client.Protocol.MessageOut;
 import net.ME1312.SubData.Client.Protocol.PacketOut;
 import net.ME1312.SubData.Client.SubDataClient;
@@ -9,6 +8,7 @@ import net.ME1312.SubData.Client.SubDataSender;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Forwarded Data Sender Class
@@ -29,7 +29,7 @@ public class ForwardedDataSender implements SubDataSender {
     }
 
     @Override
-    public void ping(Callback<PingResponse> response) {
+    public void ping(Consumer<PingResponse> response) {
         client.ping(id, response);
     }
 

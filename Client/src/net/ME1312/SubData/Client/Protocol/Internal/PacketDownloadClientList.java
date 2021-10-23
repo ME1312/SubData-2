@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Protocol.PacketObjectIn;
@@ -10,12 +9,13 @@ import net.ME1312.SubData.Client.SubDataSender;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Download Client List Packet
  */
 public class PacketDownloadClientList implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private static final HashMap<String, Callback<ObjectMap<String>>[]> callbacks = new HashMap<String, Callback<ObjectMap<String>>[]>();
+    private static final HashMap<String, Consumer<ObjectMap<String>>[]> callbacks = new HashMap<String, Consumer<ObjectMap<String>>[]>();
     private String tracker;
     private UUID id;
 
@@ -30,8 +30,8 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
      * @param callback Callbacks
      */
     @SafeVarargs
-    public PacketDownloadClientList(Callback<ObjectMap<String>>... callback) {
-        if (Util.isNull((Object) callback)) throw new NullPointerException();
+    public PacketDownloadClientList(Consumer<ObjectMap<String>>... callback) {
+        Util.nullpo((Object) callback);
         callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID).toString(), callback);
     }
 
@@ -42,8 +42,8 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
      * @param callback Callbacks
      */
     @SafeVarargs
-    public PacketDownloadClientList(UUID id, Callback<ObjectMap<String>>... callback) {
-        if (Util.isNull((Object) callback)) throw new NullPointerException();
+    public PacketDownloadClientList(UUID id, Consumer<ObjectMap<String>>... callback) {
+        Util.nullpo((Object) callback);
         callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID).toString(), callback);
         this.id = id;
     }
@@ -59,7 +59,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
     @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
-        for (Callback<ObjectMap<String>> callback : callbacks.get(data.getRawString(0x0000))) callback.run(new ObjectMap<String>((Map<String, ?>) data.getObject(0x0001)));
+        for (Consumer<ObjectMap<String>> callback : callbacks.get(data.getRawString(0x0000))) callback.accept(new ObjectMap<String>((Map<String, ?>) data.getObject(0x0001)));
         callbacks.remove(data.getRawString(0x0000));
     }
 

@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Client.Library.PingResponse;
 import net.ME1312.SubData.Client.Protocol.Forwardable;
@@ -16,12 +15,13 @@ import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Ping Packet
  */
 public class PacketPing implements Forwardable, PacketStreamOut, PacketStreamIn {
-    static HashMap<UUID, Callback<PingResponse>[]> callbacks = new HashMap<UUID, Callback<PingResponse>[]>();
+    static HashMap<UUID, Consumer<PingResponse>[]> callbacks = new HashMap<UUID, Consumer<PingResponse>[]>();
     static HashMap<UUID, PacketPing> data = new HashMap<UUID, PacketPing>();
     private UUID tracker;
     long init, queue;
@@ -37,8 +37,8 @@ public class PacketPing implements Forwardable, PacketStreamOut, PacketStreamIn 
      * @param callback Callbacks
      */
     @SafeVarargs
-    public PacketPing(Callback<PingResponse>... callback) {
-        if (Util.isNull((Object) callback)) throw new NullPointerException();
+    public PacketPing(Consumer<PingResponse>... callback) {
+        Util.nullpo((Object) callback);
         init = Calendar.getInstance().getTime().getTime();
         callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID), callback);
     }

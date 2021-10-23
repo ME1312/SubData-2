@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
 import net.ME1312.SubData.Client.Library.PingResponse;
 import net.ME1312.SubData.Client.Protocol.Forwardable;
 import net.ME1312.SubData.Client.Protocol.PacketStreamIn;
@@ -15,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.callbacks;
 import static net.ME1312.SubData.Client.Protocol.Internal.PacketPing.data;
@@ -91,7 +91,7 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
             timings[0] = data.get(id).init;
             timings[1] = data.get(id).queue;
 
-            for (Callback<PingResponse> callback : callbacks.get(id)) callback.run(new PingResponse(timings));
+            for (Consumer<PingResponse> callback : callbacks.get(id)) callback.accept(new PingResponse(timings));
             callbacks.remove(id);
             data.remove(id);
         }

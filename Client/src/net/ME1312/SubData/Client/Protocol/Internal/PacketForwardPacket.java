@@ -9,7 +9,6 @@ import net.ME1312.SubData.Client.Protocol.PacketStreamOut;
 import net.ME1312.SubData.Client.SubDataClient;
 import net.ME1312.SubData.Client.SubDataSender;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;

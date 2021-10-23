@@ -1,7 +1,5 @@
 package net.ME1312.SubData.Server.Encryption;
 
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
-import net.ME1312.Galaxi.Library.Callback.ReturnRunnable;
 import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.Galaxi.Library.Util;
 import net.ME1312.SubData.Server.Cipher;
@@ -25,6 +23,8 @@ import java.security.PublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Diffie-Hellman Exchange Handler Class (agrees upon and uses an AES encryption key)
@@ -32,8 +32,8 @@ import java.util.HashMap;
 public class DHE implements Cipher, CipherFactory {
 
     // Supported Forward Ciphers
-    private static final HashMap<String, ReturnRunnable<Pair<Cipher, String>>> forwardG = new HashMap<String, ReturnRunnable<Pair<Cipher, String>>>();
-    private static final HashMap<String, ReturnCallback<String, Cipher>> forwardP = new HashMap<String, ReturnCallback<String, Cipher>>();
+    private static final HashMap<String, Supplier<Pair<Cipher, String>>> forwardG = new HashMap<String, Supplier<Pair<Cipher, String>>>();
+    private static final HashMap<String, Function<String, Cipher>> forwardP = new HashMap<String, Function<String, Cipher>>();
 
     // Cipher Properties
     private static final int REFRESH = 125;
@@ -207,16 +207,16 @@ public class DHE implements Cipher, CipherFactory {
 
     @Override
     public Pair<Cipher, String> newCipher(String handle) {
-        return forwardG.getOrDefault(handle.toUpperCase(), () -> null).run();
+        return forwardG.getOrDefault(handle.toUpperCase(), () -> null).get();
     }
 
     @Override
     public Cipher getCipher(String handle, String key) {
-        return forwardP.getOrDefault(handle.toUpperCase(), token -> null).run(key);
+        return forwardP.getOrDefault(handle.toUpperCase(), token -> null).apply(key);
     }
 
-    public static void addCipher(String handle, ReturnRunnable<Pair<Cipher, String>> generator, ReturnCallback<String, Cipher> parser) {
-        if (Util.isNull(generator)) throw new NullPointerException();
+    public static void addCipher(String handle, Supplier<Pair<Cipher, String>> generator, Function<String, Cipher> parser) {
+        Util.nullpo(generator);
         handle = handle.toUpperCase();
         if (!forwardG.containsKey(handle)) forwardG.put(handle, generator);
         if (!forwardP.containsKey(handle)) forwardP.put(handle, parser);

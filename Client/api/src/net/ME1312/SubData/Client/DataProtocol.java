@@ -41,7 +41,7 @@ public abstract class DataProtocol {
      * @param message MessageIn to register
      */
     public void registerMessage(String channel, String handle, MessageIn message) {
-        if (Util.isNull(message, channel, handle)) throw new NullPointerException();
+        Util.nullpo(message, channel, handle);
         HashMap<String, MessageIn> map = (mIn.containsKey(channel.toLowerCase()))? mIn.get(channel.toLowerCase()):new HashMap<String, MessageIn>();
         map.put(handle, message);
         mIn.put(channel.toLowerCase(), map);
@@ -54,7 +54,7 @@ public abstract class DataProtocol {
      * @param message MessageIn to unregister
      */
     public void unregisterMessage(String channel, MessageIn message) {
-        if (Util.isNull(channel, message)) throw new NullPointerException();
+        Util.nullpo(channel, message);
         if (mIn.containsKey(channel.toLowerCase())) {
             List<String> search = new ArrayList<String>(mIn.get(channel.toLowerCase()).keySet());
             for (String handle : search) if (mIn.get(channel.toLowerCase()).get(handle).equals(message)) {
@@ -73,7 +73,7 @@ public abstract class DataProtocol {
      * @param message MessageOut to register
      */
     public void registerMessage(String channel, String handle, Class<? extends MessageOut> message) {
-        if (Util.isNull(message, channel, handle)) throw new NullPointerException();
+        Util.nullpo(message, channel, handle);
         mOut.put(message, new ContainedPair<String, String>(channel.toLowerCase(), handle));
     }
 
@@ -84,7 +84,7 @@ public abstract class DataProtocol {
      * @param message MessageOut to unregister
      */
     public void unregisterMessage(String channel, Class<? extends MessageOut> message) {
-        if (Util.isNull(channel, message)) throw new NullPointerException();
+        Util.nullpo(channel, message);
         if (mOut.containsKey(message) && mOut.get(message).key().equalsIgnoreCase(channel)) mOut.remove(message);
     }
 
@@ -96,7 +96,7 @@ public abstract class DataProtocol {
      * @return MessageIn
      */
     public MessageIn getMessage(String channel, String handle) {
-        if (Util.isNull(channel, handle)) throw new NullPointerException();
+        Util.nullpo(channel, handle);
         return mIn.get(channel.toLowerCase()).get(handle);
     }
 }

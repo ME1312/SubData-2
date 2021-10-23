@@ -1,7 +1,7 @@
 package net.ME1312.SubData.Server.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.Map.ObjectMap;
-import net.ME1312.Galaxi.Library.Util;
+import net.ME1312.Galaxi.Library.Try;
 import net.ME1312.SubData.Server.Protocol.PacketObjectIn;
 import net.ME1312.SubData.Server.Protocol.PacketObjectOut;
 import net.ME1312.SubData.Server.SubDataClient;
@@ -34,7 +34,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
         ObjectMap<String> data = new ObjectMap<String>();
 
         for (UUID id : clients.keySet()) if (request == null || request == id) {
-            data.set(id.toString(), Util.getDespiteException(() -> clients.get(id).getHandler().forSubData(), null));
+            data.set(id.toString(), Try.all.get(() -> clients.get(id).getHandler().forSubData()));
         }
 
         if (tracker != null) response.set(0x0000, tracker);

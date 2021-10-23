@@ -1,7 +1,5 @@
 package net.ME1312.SubData.Server;
 
-import net.ME1312.Galaxi.Library.Callback.Callback;
-import net.ME1312.Galaxi.Library.Callback.ReturnCallback;
 import net.ME1312.Galaxi.Library.Container.Pair;
 import net.ME1312.SubData.Server.Library.DisconnectReason;
 import net.ME1312.SubData.Server.Library.PingResponse;
@@ -12,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * SubData Client API Class
@@ -24,9 +24,9 @@ public abstract class DataClient {
      * SubData Client Event API Class
      */
     public static class Events {
-        LinkedList<Callback<DataClient>> ready = new LinkedList<Callback<DataClient>>();
-        LinkedList<ReturnCallback<DataClient, Boolean>> close = new LinkedList<ReturnCallback<DataClient, Boolean>>();
-        LinkedList<Callback<Pair<DisconnectReason, DataClient>>> closed = new LinkedList<Callback<Pair<DisconnectReason, DataClient>>>();
+        LinkedList<Consumer<DataClient>> ready = new LinkedList<Consumer<DataClient>>();
+        LinkedList<Function<DataClient, Boolean>> close = new LinkedList<Function<DataClient, Boolean>>();
+        LinkedList<Consumer<Pair<DisconnectReason, DataClient>>> closed = new LinkedList<Consumer<Pair<DisconnectReason, DataClient>>>();
         private Events() {}
 
         /**
@@ -35,7 +35,7 @@ public abstract class DataClient {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void ready(Callback<DataClient>... callbacks) {
+        public final void ready(Consumer<DataClient>... callbacks) {
             ready.addAll(Arrays.asList(callbacks));
         }
 
@@ -45,7 +45,7 @@ public abstract class DataClient {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void close(ReturnCallback<DataClient, Boolean>... callbacks) {
+        public final void close(Function<DataClient, Boolean>... callbacks) {
             close.addAll(Arrays.asList(callbacks));
         }
 
@@ -55,7 +55,7 @@ public abstract class DataClient {
          * @param callbacks Callback
          */
         @SafeVarargs
-        public final void closed(Callback<Pair<DisconnectReason, DataClient>>... callbacks) {
+        public final void closed(Consumer<Pair<DisconnectReason, DataClient>>... callbacks) {
             closed.addAll(Arrays.asList(callbacks));
         }
     }
@@ -65,7 +65,7 @@ public abstract class DataClient {
      *
      * @param response Ping Response
      */
-    public abstract void ping(Callback<PingResponse> response);
+    public abstract void ping(Consumer<PingResponse> response);
 
     /**
      * Send a message to the Client
@@ -130,7 +130,7 @@ public abstract class DataClient {
      *
      * @return New SubData Channel
      */
-    public abstract void newChannel(Callback<DataClient> client);
+    public abstract void newChannel(Consumer<DataClient> client);
 
     /**
      * Closes the connection
