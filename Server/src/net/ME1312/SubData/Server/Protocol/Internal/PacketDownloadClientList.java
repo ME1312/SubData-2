@@ -44,7 +44,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
 
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
-        client.sendPacket(new PacketDownloadClientList((data.contains(0x0000))?data.getRawString(0x0000):null, (data.contains(0x0001))?data.getUUID(0x0001):null));
+        client.sendPacket(new PacketDownloadClientList((data.contains(0x0000))?data.getString(0x0000):null, (data.contains(0x0001))?data.getUUID(0x0001):null));
     }
 
     @Override

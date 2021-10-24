@@ -43,8 +43,8 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
     @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
-        for (Consumer<SubDataClient> callback : callbacks.get(data.getRawString(0x0000))) callback.accept((data.getBoolean(0x0001))?client:null);
-        callbacks.remove(data.getRawString(0x0000));
+        for (Consumer<SubDataClient> callback : callbacks.get(data.getString(0x0000))) callback.accept((data.getBoolean(0x0001))?client:null);
+        callbacks.remove(data.getString(0x0000));
     }
 
     @Override

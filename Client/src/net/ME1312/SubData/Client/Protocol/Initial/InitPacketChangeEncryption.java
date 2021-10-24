@@ -20,8 +20,8 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
 
     @Override
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
-        String cipher = data.getRawString(0x0000).toUpperCase();
-        String key = (data.contains(0x0001))?data.getRawString(0x0001):null;
+        String cipher = data.getString(0x0000).toUpperCase();
+        String key = (data.contains(0x0001))?data.getString(0x0001):null;
 
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == ConnectionState.INITIALIZATION) {
             Util.reflect(SubDataClient.class.getDeclaredField("isdcr"), sender.getConnection(), DisconnectReason.ENCRYPTION_MISMATCH);

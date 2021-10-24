@@ -25,7 +25,7 @@ public final class InitPacketPostDeclaration implements InitialProtocol.Packet, 
     @Override
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
         UUID clientID =      data.getUUID(0x0000);
-        String name =   data.getRawString(0x0001);
+        String name =   data.getString(0x0001);
         Version version = data.getVersion(0x0002);
 
         if (Util.reflect(SubDataClient.class.getDeclaredField("state"), sender.getConnection()) == ConnectionState.INITIALIZATION) {

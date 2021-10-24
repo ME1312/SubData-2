@@ -34,7 +34,7 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
 
     @Override
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
-        String tracker = (data.contains(0x0000))?data.getRawString(0x0000):null;
+        String tracker = (data.contains(0x0000))?data.getString(0x0000):null;
         try {
             ((SubDataClient) sender).openChannel().sendPacket(new PacketOpenChannel(tracker, true));
         } catch (Throwable e) {
