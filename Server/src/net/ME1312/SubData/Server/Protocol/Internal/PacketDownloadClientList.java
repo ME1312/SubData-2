@@ -13,7 +13,7 @@ import java.util.UUID;
  * Download Client List Packet
  */
 public class PacketDownloadClientList implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private final String tracker;
+    private final UUID tracker;
     private final UUID request;
 
     /**
@@ -22,7 +22,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
      * @param tracker Request Tracker Data
      * @param request Client ID
      */
-    public PacketDownloadClientList(String tracker, UUID request) {
+    public PacketDownloadClientList(UUID tracker, UUID request) {
         this.tracker = tracker;
         this.request = request;
     }
@@ -44,7 +44,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
 
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
-        client.sendPacket(new PacketDownloadClientList((data.contains(0x0000))?data.getString(0x0000):null, (data.contains(0x0001))?data.getUUID(0x0001):null));
+        client.sendPacket(new PacketDownloadClientList((data.contains(0x0000))?data.getUUID(0x0000):null, (data.contains(0x0001))?data.getUUID(0x0001):null));
     }
 
     @Override

@@ -20,22 +20,14 @@
         <dependency>
             <groupId>net.ME1312.Galaxi</groupId>
             <artifactId>GalaxiUtil</artifactId>
-            <version>21w44b</version>
+            <version>21w44c</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.msgpack</groupId>
-            <artifactId>msgpack-core</artifactId>
-            <version>0.8.16</version>
-            <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>net.ME1312.SubData</groupId>
             <artifactId>ServerAPI</artifactId>
             <version>-PLACEHOLDER</version>
             <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -77,6 +69,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <finalName>Server</finalName>
+                    <outputDirectory>../Artifacts/Maven</outputDirectory>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

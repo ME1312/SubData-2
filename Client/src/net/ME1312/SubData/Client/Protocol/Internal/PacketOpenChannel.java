@@ -6,11 +6,13 @@ import net.ME1312.SubData.Client.Protocol.PacketObjectOut;
 import net.ME1312.SubData.Client.SubDataClient;
 import net.ME1312.SubData.Client.SubDataSender;
 
+import java.util.UUID;
+
 /**
  * Open SubChannel Packet
  */
 public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private final String tracker;
+    private final UUID tracker;
     private final boolean response;
 
     /**
@@ -19,7 +21,7 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
      * @param tracker Request Tracker Data
      * @param response Response Status
      */
-    public PacketOpenChannel(String tracker, boolean response) {
+    public PacketOpenChannel(UUID tracker, boolean response) {
         this.tracker = tracker;
         this.response = response;
     }
@@ -34,7 +36,7 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
 
     @Override
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
-        String tracker = (data.contains(0x0000))?data.getString(0x0000):null;
+        UUID tracker = (data.contains(0x0000))?data.getUUID(0x0000):null;
         try {
             ((SubDataClient) sender).openChannel().sendPacket(new PacketOpenChannel(tracker, true));
         } catch (Throwable e) {

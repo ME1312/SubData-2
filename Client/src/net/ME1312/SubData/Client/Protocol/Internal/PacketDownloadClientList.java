@@ -15,8 +15,8 @@ import java.util.function.Consumer;
  * Download Client List Packet
  */
 public class PacketDownloadClientList implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private static final HashMap<String, Consumer<ObjectMap<String>>[]> callbacks = new HashMap<String, Consumer<ObjectMap<String>>[]>();
-    private String tracker;
+    private static final HashMap<UUID, Consumer<ObjectMap<String>>[]> callbacks = new HashMap<UUID, Consumer<ObjectMap<String>>[]>();
+    private UUID tracker;
     private UUID id;
 
     /**
@@ -32,7 +32,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
     @SafeVarargs
     public PacketDownloadClientList(Consumer<ObjectMap<String>>... callback) {
         Util.nullpo((Object) callback);
-        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID).toString(), callback);
+        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID), callback);
     }
 
     /**
@@ -44,7 +44,7 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
     @SafeVarargs
     public PacketDownloadClientList(UUID id, Consumer<ObjectMap<String>>... callback) {
         Util.nullpo((Object) callback);
-        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID).toString(), callback);
+        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID), callback);
         this.id = id;
     }
 
@@ -59,8 +59,8 @@ public class PacketDownloadClientList implements PacketObjectOut<Integer>, Packe
     @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
-        for (Consumer<ObjectMap<String>> callback : callbacks.get(data.getString(0x0000))) callback.accept(new ObjectMap<String>((Map<String, ?>) data.getObject(0x0001)));
-        callbacks.remove(data.getString(0x0000));
+        for (Consumer<ObjectMap<String>> callback : callbacks.get(data.getUUID(0x0000))) callback.accept(new ObjectMap<String>((Map<String, ?>) data.getObject(0x0001)));
+        callbacks.remove(data.getUUID(0x0000));
     }
 
     @Override

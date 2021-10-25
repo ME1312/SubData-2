@@ -14,8 +14,8 @@ import java.util.function.Consumer;
  * Open SubChannel Packet
  */
 public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObjectIn<Integer> {
-    private static final HashMap<String, Consumer<SubDataClient>[]> callbacks = new HashMap<String, Consumer<SubDataClient>[]>();
-    private String tracker;
+    private static final HashMap<UUID, Consumer<SubDataClient>[]> callbacks = new HashMap<UUID, Consumer<SubDataClient>[]>();
+    private UUID tracker;
 
     /**
      * New PacketOpenChannel (In)
@@ -30,7 +30,7 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
     @SafeVarargs
     public PacketOpenChannel(Consumer<SubDataClient>... callback) {
         Util.nullpo((Object) callback);
-        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID).toString(), callback);
+        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID), callback);
     }
 
     @Override
@@ -43,8 +43,8 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
     @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataClient client, ObjectMap<Integer> data) throws Throwable {
-        for (Consumer<SubDataClient> callback : callbacks.get(data.getString(0x0000))) callback.accept((data.getBoolean(0x0001))?client:null);
-        callbacks.remove(data.getString(0x0000));
+        for (Consumer<SubDataClient> callback : callbacks.get(data.getUUID(0x0000))) callback.accept((data.getBoolean(0x0001))?client:null);
+        callbacks.remove(data.getUUID(0x0000));
     }
 
     @Override
