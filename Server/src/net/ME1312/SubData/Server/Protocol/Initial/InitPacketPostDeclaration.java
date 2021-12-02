@@ -30,9 +30,4 @@ public final class InitPacketPostDeclaration implements InitialProtocol.Packet, 
             client.sendPacket(new InitPacketLogin());
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

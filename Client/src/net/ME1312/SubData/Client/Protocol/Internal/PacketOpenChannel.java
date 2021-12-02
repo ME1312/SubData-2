@@ -43,9 +43,4 @@ public class PacketOpenChannel implements PacketObjectOut<Integer>, PacketObject
             sender.sendPacket(new PacketOpenChannel(tracker, false));
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

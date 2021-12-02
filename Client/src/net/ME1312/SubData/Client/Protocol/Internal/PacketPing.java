@@ -86,9 +86,4 @@ public class PacketPing implements Forwardable, PacketStreamOut, PacketStreamIn 
         sender.sendPacket(new PacketPingResponse(new UUID(id_p1, id_p2)));
         Long.valueOf(unused);
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

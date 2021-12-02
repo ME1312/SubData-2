@@ -48,9 +48,4 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Pack
             }
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

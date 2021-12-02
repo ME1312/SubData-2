@@ -35,9 +35,4 @@ public final class InitPacketChangeState implements InitialProtocol.Packet, Pack
             setReady(client);
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

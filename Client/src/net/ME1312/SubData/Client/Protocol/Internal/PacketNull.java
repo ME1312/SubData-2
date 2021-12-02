@@ -20,9 +20,4 @@ public final class PacketNull implements InitialProtocol.Packet, PacketIn, Packe
     public void receive(SubDataSender sender) throws Throwable {
         // do nothing
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

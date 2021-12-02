@@ -1,7 +1,6 @@
 package net.ME1312.SubData.Client.Protocol.Internal;
 
 import net.ME1312.Galaxi.Library.Util;
-import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.DataProtocol;
 import net.ME1312.SubData.Client.Library.Exception.IllegalMessageException;
 import net.ME1312.SubData.Client.Library.Exception.IllegalSenderException;
@@ -23,12 +22,12 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
     @Override
     public void receive(SubDataSender sender, InputStream data) throws Throwable {
         ByteArrayOutputStream pending = new ByteArrayOutputStream();
-        String channel = null, handle = null, version = null;
+        String channel = null, handle = null;
 
         // Parse Message Metadata
         boolean escaped = false;
         int b, state = 0;
-        while (state < 3 && (b = data.read()) != -1) {
+        while (state < 2 && (b = data.read()) != -1) {
             if (escaped) {
                 switch (b) {
                     case '\u001B': // [ESC] (Escape character)
@@ -41,9 +40,6 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
                                 break;
                             case 1:
                                 handle = new String(pending.toByteArray(), StandardCharsets.UTF_8);
-                                break;
-                            case 2:
-                                version = new String(pending.toByteArray(), StandardCharsets.UTF_8);
                                 break;
                         }
                         pending.reset();
@@ -64,20 +60,14 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
 
         HashMap<String, HashMap<String, MessageIn>> mIn = Util.reflect(DataProtocol.class.getDeclaredField("mIn"), sender.getProtocol());
 
-        if (Util.isNull(channel, handle, version)) throw new IllegalMessageException("Incomplete Message Metadata: [" + ((channel == null)?"null":"\""+channel+"\"") + ", " + ((handle == null)?"null":"\""+handle+"\"") + ", " + ((version == null)?"null":"\""+version+"\"") + "]");
-        if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\", \"" + version + "\"]");
+        if (Util.isNull(channel, handle)) throw new IllegalMessageException("Incomplete Message Metadata: [" + ((channel == null)?"null":"\""+channel+"\"") + ", " + ((handle == null)?"null":"\""+handle+"\"") + "]");
+        if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
-        if (sender instanceof ForwardedDataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("This handler does not support forwarded messages: [" + message.getClass().getCanonicalName() + ", \"" + version + "\"]");
-        if (sender instanceof SubDataClient && message instanceof ForwardOnly) throw new IllegalSenderException("This handler does not support non-forwarded messages: [" + message.getClass().getCanonicalName() + ", \"" + version + "\"]");
-        if (!message.isCompatible(Version.fromString(version))) throw new IllegalMessageException("This handler does not support message version \"" + message.version().toFullString() + "\": [" + message.getClass().getCanonicalName() + ", \"" + version + "\"]");
+        if (sender instanceof ForwardedDataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("This handler does not support forwarded messages: [" + message.getClass().getCanonicalName() + "]");
+        if (sender instanceof SubDataClient && message instanceof ForwardOnly) throw new IllegalSenderException("This handler does not support non-forwarded messages: [" + message.getClass().getCanonicalName() + "]");
         message.receive(sender);
         if (message instanceof MessageStreamIn) ((MessageStreamIn) message).receive(sender, data);
         else data.close();
-    }
-
-    @Override
-    public int version() {
-        return 0x0001;
     }
 }

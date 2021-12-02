@@ -95,9 +95,4 @@ public class PacketPingResponse implements PacketStreamOut, PacketStreamIn {
             data.remove(id);
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

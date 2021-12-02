@@ -15,11 +15,4 @@ public interface PacketOut {
     default void sending(SubDataClient client) throws Throwable {
 
     }
-
-    /**
-     * Protocol Version
-     *
-     * @return Version (as an unsigned 16-bit value)
-     */
-    int version();
 }

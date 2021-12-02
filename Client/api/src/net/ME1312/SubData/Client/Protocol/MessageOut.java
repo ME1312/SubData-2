@@ -1,6 +1,5 @@
 package net.ME1312.SubData.Client.Protocol;
 
-import net.ME1312.Galaxi.Library.Version.Version;
 import net.ME1312.SubData.Client.DataSender;
 
 /**
@@ -16,11 +15,4 @@ public interface MessageOut {
     default void sending(DataSender sender) throws Throwable {
 
     }
-
-    /**
-     * Protocol Version
-     *
-     * @return Version
-     */
-    Version version();
 }

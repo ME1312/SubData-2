@@ -64,9 +64,4 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
             throw new IllegalArgumentException("Invalid UUID data for Sender ID: [" + id_p1 + ", " + id_p2 + "]");
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

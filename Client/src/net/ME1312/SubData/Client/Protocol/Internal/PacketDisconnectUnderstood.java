@@ -19,9 +19,4 @@ public final class PacketDisconnectUnderstood implements InitialProtocol.Packet,
             Util.reflect(SubDataClient.class.getDeclaredMethod("close", DisconnectReason.class), sender.getConnection(), DisconnectReason.CLOSE_REQUESTED);
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

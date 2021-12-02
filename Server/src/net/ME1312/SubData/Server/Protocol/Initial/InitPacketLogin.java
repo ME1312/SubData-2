@@ -53,9 +53,4 @@ public final class InitPacketLogin implements InitialProtocol.Packet, PacketObje
             }
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

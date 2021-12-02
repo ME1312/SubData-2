@@ -96,9 +96,4 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
             data.remove(id);
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

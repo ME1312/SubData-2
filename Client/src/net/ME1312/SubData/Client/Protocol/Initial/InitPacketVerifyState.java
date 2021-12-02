@@ -54,9 +54,4 @@ public final class InitPacketVerifyState implements InitialProtocol.Packet, Pack
     public void receive(SubDataSender sender, ObjectMap<Integer> data) throws Throwable {
         sender.sendPacket(new InitPacketVerifyState(data.getBoolean(0x0000, false)));
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

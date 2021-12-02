@@ -30,9 +30,4 @@ public final class InitPacketChangeState implements InitialProtocol.Packet, Pack
     public void receive(SubDataSender sender) throws Throwable {
         sender.sendPacket(new InitPacketChangeState());
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

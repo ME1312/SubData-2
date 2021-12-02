@@ -16,9 +16,4 @@ public final class PacketDisconnect implements InitialProtocol.Packet, PacketIn,
         Util.reflect(SubDataClient.class.getDeclaredField("state"), client, ConnectionState.CLOSING);
         client.sendPacket(new PacketDisconnectUnderstood());
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

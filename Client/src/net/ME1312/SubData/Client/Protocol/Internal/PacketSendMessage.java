@@ -35,14 +35,11 @@ public class PacketSendMessage implements Forwardable, PacketStreamOut {
         HashMap<Class<? extends MessageOut>, Pair<String, String>> mOut = Util.reflect(DataProtocol.class.getDeclaredField("mOut"), sender.getProtocol());
 
         if (!mOut.containsKey(message.getClass())) throw new IllegalMessageException("Could not find handle for message: " + message.getClass().getCanonicalName());
-        if (message.version() == null || message.version().toString().length() == 0) throw new IllegalMessageException("Cannot send message with null version: " + message.getClass().getCanonicalName());
 
         EscapedOutputStream out = new EscapedOutputStream(data, '\u001B', '\u0003');
         out.write(mOut.get(message.getClass()).key().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
         out.write(mOut.get(message.getClass()).value().getBytes(StandardCharsets.UTF_8));
-        out.control('\u0003');
-        out.write(message.version().toFullString().getBytes(StandardCharsets.UTF_8));
         out.control('\u0003');
         if (message instanceof MessageStreamOut) ((MessageStreamOut) message).send(sender, data);
         else data.close();
@@ -51,10 +48,5 @@ public class PacketSendMessage implements Forwardable, PacketStreamOut {
     @Override
     public void sending(SubDataSender sender) throws Throwable {
         message.sending(sender);
-    }
-
-    @Override
-    public int version() {
-        return 0x0001;
     }
 }

@@ -69,9 +69,4 @@ public final class InitPacketChangeEncryption implements InitialProtocol.Packet,
             }
         }
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }

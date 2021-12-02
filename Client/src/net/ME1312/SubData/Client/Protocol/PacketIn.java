@@ -14,21 +14,4 @@ public interface PacketIn {
      * @throws Throwable
      */
     void receive(SubDataSender sender) throws Throwable;
-
-    /**
-     * Protocol Version
-     *
-     * @return Version (as an unsigned 16-bit value)
-     */
-    int version();
-
-    /**
-     * Checks compatibility with an Incoming Packet
-     *
-     * @param version Version of the incoming packet
-     * @return Compatibility Status
-     */
-    default boolean isCompatible(int version) {
-        return version() == version;
-    }
 }

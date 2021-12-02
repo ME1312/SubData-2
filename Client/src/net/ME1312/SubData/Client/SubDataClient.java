@@ -107,23 +107,18 @@ public class SubDataClient extends DataClient implements SubDataSender {
         try {
             // Step 3 // Read the Packet Metadata
             byte[] pending = new byte[2];
-            int id = -1, version = -1;
+            int id = -1;
 
             int b, position = 0;
-            while (position < 4 && (b = data.read()) != -1) {
-                pending[position++ % 2] = (byte) b;
-                switch (position) {
-                    case 2:
-                        id = (int) UnsignedData.resign(pending);
-                        break;
-                    case 4:
-                        version = (int) UnsignedData.resign(pending);
-                        break;
+            while (position < 2 && (b = data.read()) != -1) {
+                pending[position] = (byte) b;
+                if (++position == 2) {
+                    id = (int) UnsignedData.resign(pending);
                 }
             }
 
             // Step 4 // Create a detached data forwarding InputStream
-            if (state != CLOSED && id >= 0 && version >= 0) {
+            if (state != CLOSED && id >= 0) {
                 Container<Boolean> open = new Container<>(true);
                 InputStream forward = new InputStream() {
                     @Override
@@ -150,20 +145,19 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     }
                 };
                 if (state == PRE_INITIALIZATION && id != 0x0000) {
-                    throw new ProtocolException(address.toString() + ": Only 0x0000 may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    throw new ProtocolException(address.toString() + ": Only 0x0000 may be received during the PRE_INITIALIZATION stage: [" + DebugUtil.toHex(0xFFFF, id) + "]");
                 } else if (state == CLOSING && id != 0xFFFE) {
                     forward.close(); // Suppress other packets during the CLOSING stage
                 } else {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
-                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException(address.toString() + ": This handler does not support forwarded packets: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException(address.toString() + ": This handler does not support non-forwarded packets: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
-                    if (!packet.isCompatible(version)) throw new IllegalPacketException(address.toString() + ": This handler does not support packet version " + DebugUtil.toHex(0xFFFF, packet.version()) + ": [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException(address.toString() + ": This handler does not support forwarded packets: [" + packet.getClass().getCanonicalName() + "]");
+                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException(address.toString() + ": This handler does not support non-forwarded packets: [" + packet.getClass().getCanonicalName() + "]");
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + ", " + DebugUtil.toHex(0xFFFF, version) + "]");
+                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + "]");
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
@@ -262,10 +256,8 @@ public class SubDataClient extends DataClient implements SubDataSender {
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
             if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
-            if (next.version() > 65535 || next.version() < 0) throw new IllegalMessageException(address.toString() + ": Packet version is not in range (0x0000 to 0xFFFF): " + next.getClass().getCanonicalName());
 
-            data.write(UnsignedData.unsign((long) pOut.get(next.getClass()), 2));
-            data.write(UnsignedData.unsign((long) next.version(), 2));
+            data.write(UnsignedData.unsign((long) pOut.get(next.getClass()), 2), 0, 2);
             data.flush();
 
             // Step 3 // Invoke the Packet

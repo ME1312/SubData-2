@@ -85,9 +85,4 @@ public class PacketPing implements PacketStreamOut, PacketStreamIn {
         client.sendPacket(new PacketPingResponse(new UUID(id_p1, id_p2)));
         Long.valueOf(unused); //TODO Remove this
     }
-
-    @Override
-    public int version() {
-        return 0x0001;
-    }
 }
