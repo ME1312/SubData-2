@@ -26,19 +26,17 @@ public final class InitPacketDeclaration implements InitialProtocol.Packet, Pack
     }
 
     @Override
-    public void receive(SubDataSender sender, InputStream data) throws Throwable {
-        byte[] pending = new byte[2];
-        int version = -1;
+    public void receive(SubDataSender sender, InputStream in) throws Throwable {
+        byte[] data = new byte[2];
 
-        int b, position = 0;
-        while (position < 2 && (b = data.read()) != -1) {
-            pending[position] = (byte) b;
-            if (++position == 2) {
-                version = (int) UnsignedData.resign(pending);
-            }
+        int b, i = 0;
+        while ((b = in.read()) != -1) {
+            data[i] = (byte) b;
+            if (++i == 2) break;
         }
+        in.close();
 
-        data.close();
+        int version = (int) UnsignedData.resign(data);
         if (InitPacketDeclaration.version != version) {
             if (version < 0) return;
             throw new ProtocolException("SubData protocol version mismatch: [" + DebugUtil.toHex(0xFFFF, version) + "] is not [" + DebugUtil.toHex(0xFFFF, InitPacketDeclaration.version) + "]");

@@ -109,11 +109,12 @@ public class SubDataClient extends DataClient implements SubDataSender {
             byte[] pending = new byte[2];
             int id = -1;
 
-            int b, position = 0;
-            while (position < 2 && (b = data.read()) != -1) {
-                pending[position] = (byte) b;
-                if (++position == 2) {
+            int b, i = 0;
+            while ((b = data.read()) != -1) {
+                pending[i] = (byte) b;
+                if (++i == 2) {
                     id = (int) UnsignedData.resign(pending);
+                    break;
                 }
             }
 

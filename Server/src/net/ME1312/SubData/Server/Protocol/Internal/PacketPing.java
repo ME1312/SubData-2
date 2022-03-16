@@ -6,7 +6,6 @@ import net.ME1312.SubData.Server.Protocol.PacketStreamIn;
 import net.ME1312.SubData.Server.Protocol.PacketStreamOut;
 import net.ME1312.SubData.Server.SubDataClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -20,8 +19,8 @@ import java.util.function.Consumer;
  * Ping Packet
  */
 public class PacketPing implements PacketStreamOut, PacketStreamIn {
-    static HashMap<UUID, Consumer<PingResponse>[]> callbacks = new HashMap<UUID, Consumer<PingResponse>[]>();
-    static HashMap<UUID, PacketPing> data = new HashMap<UUID, PacketPing>();
+    static HashMap<UUID, PacketPing> requests = new HashMap<UUID, PacketPing>();
+    Consumer<PingResponse>[] callbacks;
     private UUID tracker;
     long init, queue;
 
@@ -39,50 +38,40 @@ public class PacketPing implements PacketStreamOut, PacketStreamIn {
     public PacketPing(Consumer<PingResponse>... callback) {
         Util.nullpo((Object) callback);
         init = Calendar.getInstance().getTime().getTime();
-        callbacks.put(tracker = Util.getNew(callbacks.keySet(), UUID::randomUUID), callback);
+        requests.put(tracker = Util.getNew(requests.keySet(), UUID::randomUUID), this);
+        callbacks = callback;
     }
 
     @Override
     public void send(SubDataClient client, OutputStream out) throws Throwable {
-        data.put(tracker, this);
         queue = Calendar.getInstance().getTime().getTime();
 
-        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(tracker.getMostSignificantBits()).array());
-        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(tracker.getLeastSignificantBits()).array());
-        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(init).array());  // Object Initialization (Local) [0]
-        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(queue).array()); // On Send (Local) [1]
+        out.write(ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN)
+                .putLong(tracker.getMostSignificantBits())
+                .putLong(tracker.getLeastSignificantBits())
+                .putLong(init)  // Object Initialization (Local) [0]
+                .putLong(queue) // On Send (Local) [1]
+                .array()
+        );
         out.close();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataClient client, InputStream in) throws Throwable {
-        ByteArrayOutputStream pending = new ByteArrayOutputStream();
-        long id_p1 = -1, id_p2 = -1, unused = -1;
+        ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN);
 
-        int b, position = 0;
-        while (position < 32 && (b = in.read()) != -1) {
-            position++;
-            pending.write(b);
-            switch (position) {
-                case 8:
-                    id_p1 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
-                    pending.reset();
-                    break;
-                case 16:
-                    id_p2 = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
-                    pending.reset();
-                    break;
-                case 24: // These bytes are read for consistency reasons.
-                case 32: // As the name suggests, they go unused.
-                    unused = ByteBuffer.wrap(pending.toByteArray()).order(ByteOrder.BIG_ENDIAN).getLong();
-                    pending.reset();
-                    break;
-            }
+        int b, i = 0;
+        while ((b = in.read()) != -1) {
+            data.put((byte) b);
+            if (++i == 32) break;
         }
-
         in.close();
-        client.sendPacket(new PacketPingResponse(new UUID(id_p1, id_p2)));
-        Long.valueOf(unused); //TODO Remove this
+        data.position(0);
+
+        UUID id = new UUID(data.getLong(), data.getLong());
+        data.getLong(); // These bytes are read for timing consistency.
+        data.getLong(); // As the code suggests, they go unused.
+        client.sendPacket(new PacketPingResponse(id));
     }
 }

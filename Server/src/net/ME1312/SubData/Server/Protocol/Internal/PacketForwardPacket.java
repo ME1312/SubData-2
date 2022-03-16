@@ -34,38 +34,33 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
 
     @Override
     public void send(SubDataClient client, OutputStream out) throws Throwable {
-        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).array());
-        out.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getLeastSignificantBits()).array());
-        int b;
-        while ((b = in.read()) != -1) out.write(b);
+        out.write(ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).putLong(id.getLeastSignificantBits()).array());
+        int i;
+        byte[] b = new byte[1024];
+        while ((i = in.read(b)) != -1) {
+            out.write(b, 0, i);
+        }
         out.close();
     }
 
     @Override
     public void receive(SubDataClient client, InputStream in) throws Throwable {
-        byte[] pending = new byte[8];
-        long id_p1 = -1, id_p2 = -1;
+        ByteBuffer data = ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN);
 
-        int b, position = 0;
-        while (position < 16 && (b = in.read()) != -1) {
-            pending[position++ % 8] = (byte) b;
-            switch (position) {
-                case 8:
-                    id_p1 = ByteBuffer.wrap(pending).order(ByteOrder.BIG_ENDIAN).getLong();
-                    break;
-                case 16:
-                    id_p2 = ByteBuffer.wrap(pending).order(ByteOrder.BIG_ENDIAN).getLong();
-                    break;
-            }
+        int b, i = 0;
+        while ((b = in.read()) != -1) {
+            data.put((byte) b);
+            if (++i == 16) break;
         }
 
-        if (position >= 16) {
-            UUID id = new UUID(id_p1, id_p2);
+        data.position(0);
+        if (i == 16) {
+            UUID id = new UUID(data.getLong(), data.getLong());
             if (client.getServer().getClient(id) != null) {
                 client.getServer().getClient(id).sendPacket(new PacketForwardPacket(client, in));
             } else throw new IllegalArgumentException("Cannot forward to invalid Destination ID: [" + id + "]");
         } else {
-            throw new IllegalArgumentException("Invalid UUID data for Destination ID: [" + id_p1 + ", " + id_p2 + "]");
+            throw new IllegalArgumentException("Invalid UUID data for Destination ID: [" + data.getLong() + ", " + data.getLong() + "]");
         }
     }
 }

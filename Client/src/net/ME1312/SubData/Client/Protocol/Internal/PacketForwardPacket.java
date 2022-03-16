@@ -35,33 +35,25 @@ public class PacketForwardPacket implements PacketStreamIn, PacketStreamOut {
 
     @Override
     public void send(SubDataSender sender, OutputStream data) throws Throwable {
-        data.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).array());
-        data.write(ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(id.getLeastSignificantBits()).array());
+        data.write(ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN).putLong(id.getMostSignificantBits()).putLong(id.getLeastSignificantBits()).array());
         Util.reflect(SubDataClient.class.getDeclaredMethod("write", SubDataSender.class, PacketOut.class, OutputStream.class), sender.getConnection(), new ForwardedDataSender(sender.getConnection(), id), packet, data);
     }
 
     @Override
     public void receive(SubDataSender sender, InputStream in) throws Throwable {
-        byte[] pending = new byte[8];
-        long id_p1 = -1, id_p2 = -1;
+        ByteBuffer data = ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN);
 
-        int b, position = 0;
-        while (position < 16 && (b = in.read()) != -1) {
-            pending[position++ % 8] = (byte) b;
-            switch (position) {
-                case 8:
-                    id_p1 = ByteBuffer.wrap(pending).order(ByteOrder.BIG_ENDIAN).getLong();
-                    break;
-                case 16:
-                    id_p2 = ByteBuffer.wrap(pending).order(ByteOrder.BIG_ENDIAN).getLong();
-                    break;
-            }
+        int b, i = 0;
+        while ((b = in.read()) != -1) {
+            data.put((byte) b);
+            if (++i == 16) break;
         }
 
-        if (position >= 16) {
-            Util.reflect(SubDataClient.class.getDeclaredMethod("read", SubDataSender.class, Container.class, InputStream.class), sender.getConnection(), new ForwardedDataSender(sender.getConnection(), new UUID(id_p1, id_p2)), new Container<>(false), in);
+        data.position(0);
+        if (i == 16) {
+            Util.reflect(SubDataClient.class.getDeclaredMethod("read", SubDataSender.class, Container.class, InputStream.class), sender.getConnection(), new ForwardedDataSender(sender.getConnection(), new UUID(data.getLong(), data.getLong())), new Container<>(false), in);
         } else {
-            throw new IllegalArgumentException("Invalid UUID data for Sender ID: [" + id_p1 + ", " + id_p2 + "]");
+            throw new IllegalArgumentException("Invalid UUID data for Sender ID: [" + data.getLong() + ", " + data.getLong() + "]");
         }
     }
 }
