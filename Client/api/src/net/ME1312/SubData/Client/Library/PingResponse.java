@@ -1,10 +1,11 @@
 package net.ME1312.SubData.Client.Library;
 
 /**
- * Ping Response Class
+ * Ping Response Class<br>
+ * All values presented by this class have been recorded in nanoseconds
  */
 public class PingResponse {
-    private final long qL, qR, t1, t2;
+    private final long qL, qR, t1, t2, r;
 
     /**
      * Calculates and stores the meaning of a ping using its recorded timings
@@ -16,15 +17,7 @@ public class PingResponse {
         qR = timings[3] - timings[2];
         t1 = timings[2] - timings[1];
         t2 = timings[4] - timings[3];
-    }
-
-    /**
-     * Get how long the ping waited in a queue
-     *
-     * @return Queue Time
-     */
-    public long getQueueTime() {
-        return qL + qR;
+        r  = timings[4] - timings[0];
     }
 
     /**
@@ -46,30 +39,45 @@ public class PingResponse {
     }
 
     /**
-     * Get how long it took to transfer the ping over the network
+     * Get how long the ping waited in a queue
      *
-     * @return Transfer Time
+     * @return Queue Time
      */
-    public long getTransferTime() {
-        return t1 + t2;
+    public long getQueueTime() {
+        return qL + qR;
     }
 
     /**
-     * Get how long it took to upload the ping
+     * @deprecated Get how long it took to upload the ping
+     * @see System#nanoTime() This method is wildly inaccurate in real-world scenarios. It may only be valid for evaluating a connection to-and-from the same JVM instance.
+     * See System.nanoTime() for more information regarding these limitations.
      *
      * @return Upload Transfer Time
      */
+    @Deprecated
     public long getUploadTransferTime() {
         return t1;
     }
 
     /**
-     * Get how long it took to download the ping response
+     * @deprecated Get how long it took to download the ping response
+     * @see System#nanoTime() This method is wildly inaccurate in real-world scenarios. It may only be valid for evaluating a connection to-and-from the same JVM instance.
+     * See System.nanoTime() for more information regarding these limitations.
      *
      * @return Download Transfer Time
      */
+    @Deprecated
     public long getDownloadTransferTime() {
         return t2;
+    }
+
+    /**
+     * Get how long it took to transfer the ping over the network
+     *
+     * @return Transfer Time
+     */
+    public long getTransferTime() {
+        return t1 + t2; // These two wildly inaccurate fields cancel each-other out when added, creating a perfectly reliable transfer metric.
     }
 
     /**
@@ -78,6 +86,6 @@ public class PingResponse {
      * @return Response Time
      */
     public long getResponseTime() {
-        return qL + qR + t1 + t2;
+        return r;
     }
 }

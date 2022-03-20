@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -38,15 +37,14 @@ public class PacketPing implements Forwardable, PacketStreamOut, PacketStreamIn 
     @SafeVarargs
     public PacketPing(Consumer<PingResponse>... callback) {
         Util.nullpo((Object) callback);
-        init = Calendar.getInstance().getTime().getTime();
         requests.put(tracker = Util.getNew(requests.keySet(), UUID::randomUUID), this);
         callbacks = callback;
+        init = System.nanoTime();
     }
 
     @Override
     public void send(SubDataSender sender, OutputStream out) throws Throwable {
-        requests.put(tracker, this);
-        queue = Calendar.getInstance().getTime().getTime();
+        queue = System.nanoTime();
 
         out.write(ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN)
                 .putLong(tracker.getMostSignificantBits())
@@ -58,7 +56,6 @@ public class PacketPing implements Forwardable, PacketStreamOut, PacketStreamIn 
         out.close();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataSender sender, InputStream in) throws Throwable {
         ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN);
@@ -74,6 +71,6 @@ public class PacketPing implements Forwardable, PacketStreamOut, PacketStreamIn 
         UUID request = new UUID(data.getLong(), data.getLong());
         data.getLong(); // These bytes are read for timing consistency.
         data.getLong(); // As the code suggests, they go unused.
-        sender.sendPacket(new PacketPingResponse(request));
+        sender.sendPacket(new PacketPingResponse(request, System.nanoTime()));
     }
 }

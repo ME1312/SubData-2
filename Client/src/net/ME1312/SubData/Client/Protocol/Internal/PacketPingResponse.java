@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Calendar;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -33,15 +32,16 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
      * New PacketPingResponse (Out)
      *
      * @param tracker UUID Tracker
+     * @param time Nanosecond Timing
      */
-    public PacketPingResponse(UUID tracker) throws IOException {
+    public PacketPingResponse(UUID tracker, long time) throws IOException {
         this.tracker = tracker;
-        this.init = Calendar.getInstance().getTime().getTime();
+        this.init = time;
     }
 
     @Override
     public void send(SubDataSender sender, OutputStream out) throws Throwable {
-        long queue = Calendar.getInstance().getTime().getTime();
+        long queue = System.nanoTime();
 
         out.write(ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN)
                 .putLong(tracker.getMostSignificantBits())
@@ -70,7 +70,7 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
         UUID id = new UUID(data.getLong(), data.getLong());
         timings[2] = data.getLong();
         timings[3] = data.getLong();
-        timings[4] = Calendar.getInstance().getTime().getTime(); // Transaction Complete [4]
+        timings[4] = System.nanoTime(); // Transaction Complete [4]
 
         PacketPing request = requests.remove(id);
         if (request != null) {
