@@ -5,7 +5,7 @@ package net.ME1312.SubData.Server.Library;
  * All values presented by this class have been recorded in nanoseconds
  */
 public class PingResponse {
-    private final long qL, qR, t1, t2, r;
+    private final long qL, qR, t1, t2, t, r;
 
     /**
      * Calculates and stores the meaning of a ping using its recorded timings
@@ -17,6 +17,7 @@ public class PingResponse {
         qR = timings[3] - timings[2];
         t1 = timings[2] - timings[1];
         t2 = timings[4] - timings[3];
+        t  = timings[4] - timings[1] - qR;
         r  = timings[4] - timings[0];
     }
 
@@ -55,7 +56,7 @@ public class PingResponse {
      * @return Upload Transfer Time
      */
     @Deprecated
-    public long getUploadTransferTime() {
+    public long getUploadTime() {
         return t1;
     }
 
@@ -67,17 +68,17 @@ public class PingResponse {
      * @return Download Transfer Time
      */
     @Deprecated
-    public long getDownloadTransferTime() {
+    public long getDownloadTime() {
         return t2;
     }
 
     /**
-     * Get how long it took to transfer the ping over the network
+     * Get how long it took to transfer the ping over the network in both directions
      *
      * @return Transfer Time
      */
     public long getTransferTime() {
-        return t1 + t2; // These two wildly inaccurate fields cancel each-other out when added, creating a perfectly reliable transfer metric.
+        return t;
     }
 
     /**
