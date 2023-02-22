@@ -151,7 +151,7 @@ public class SubDataClient extends DataClient {
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + "]");
+                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getTypeName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getTypeName() + "]");
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
@@ -249,7 +249,7 @@ public class SubDataClient extends DataClient {
             };
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= POST_INITIALIZATION.asInt())?subdata.protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
-            if (!pOut.containsKey(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
+            if (!pOut.containsKey(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getTypeName());
 
             data.write(UnsignedData.unsign((long) pOut.get(next.getClass()), 2), 0, 2);
             data.flush();

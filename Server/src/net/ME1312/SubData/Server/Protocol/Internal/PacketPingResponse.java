@@ -52,7 +52,6 @@ public class PacketPingResponse implements PacketStreamOut, PacketStreamIn {
         out.close();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataClient client, InputStream in) throws Throwable {
         ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN);

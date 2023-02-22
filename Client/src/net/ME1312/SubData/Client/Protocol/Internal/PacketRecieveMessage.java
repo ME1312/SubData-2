@@ -64,8 +64,8 @@ public class PacketRecieveMessage implements Forwardable, PacketStreamIn {
         if (!mIn.keySet().contains(channel) || !mIn.get(channel).keySet().contains(handle)) throw new IllegalMessageException("Could not find handler for message: [\"" + channel + "\", \"" + handle + "\"]");
 
         MessageIn message = mIn.get(channel).get(handle);
-        if (sender instanceof ForwardedDataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("This handler does not support forwarded messages: [" + message.getClass().getCanonicalName() + "]");
-        if (sender instanceof SubDataClient && message instanceof ForwardOnly) throw new IllegalSenderException("This handler does not support non-forwarded messages: [" + message.getClass().getCanonicalName() + "]");
+        if (sender instanceof ForwardedDataSender && !(message instanceof Forwardable)) throw new IllegalSenderException("This handler does not support forwarded messages: [" + message.getClass().getTypeName() + "]");
+        if (sender instanceof SubDataClient && message instanceof ForwardOnly) throw new IllegalSenderException("This handler does not support non-forwarded messages: [" + message.getClass().getTypeName() + "]");
         message.receive(sender);
         if (message instanceof MessageStreamIn) ((MessageStreamIn) message).receive(sender, data);
         else data.close();

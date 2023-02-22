@@ -53,7 +53,6 @@ public class PacketPingResponse implements Forwardable, PacketStreamOut, PacketS
         out.close();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void receive(SubDataSender sender, InputStream in) throws Throwable {
         ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN);

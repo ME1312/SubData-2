@@ -19,8 +19,8 @@
     <dependencies>
         <dependency>
             <groupId>net.ME1312.Galaxi</groupId>
-            <artifactId>GalaxiUtil</artifactId>
-            <version>22w11a</version>
+            <artifactId>GalaxiBase</artifactId>
+            <version>23w08a</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -98,7 +98,7 @@
                             <reportOutputDirectory>${basedir}/../../Javadoc/ServerAPI</reportOutputDirectory>
                             <additionalOptions>-Xdoclint:none</additionalOptions>
                             <links>
-                                <link>https://dev.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiUtil/</link>
+                                <link>https://dev.me1312.net/jenkins/job/GalaxiEngine/javadoc/GalaxiBase/</link>
                             </links>
                         </configuration>
                     </execution>

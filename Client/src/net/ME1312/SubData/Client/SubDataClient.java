@@ -153,12 +153,12 @@ public class SubDataClient extends DataClient implements SubDataSender {
                     HashMap<Integer, PacketIn> pIn = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pIn:Util.reflect(InitialProtocol.class.getDeclaredField("pIn"), null);
                     if (!pIn.keySet().contains(id)) throw new IllegalPacketException(address.toString() + ": Could not find handler for packet: [" + DebugUtil.toHex(0xFFFF, id) + "]");
                     PacketIn packet = pIn.get(id);
-                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException(address.toString() + ": This handler does not support forwarded packets: [" + packet.getClass().getCanonicalName() + "]");
-                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException(address.toString() + ": This handler does not support non-forwarded packets: [" + packet.getClass().getCanonicalName() + "]");
+                    if (sender instanceof ForwardedDataSender && !(packet instanceof Forwardable)) throw new IllegalSenderException(address.toString() + ": This handler does not support forwarded packets: [" + packet.getClass().getTypeName() + "]");
+                    if (sender instanceof SubDataClient && packet instanceof ForwardOnly) throw new IllegalSenderException(address.toString() + ": This handler does not support non-forwarded packets: [" + packet.getClass().getTypeName() + "]");
 
                     // Step 5 // Invoke the Packet
                     if (state == PRE_INITIALIZATION && !(packet instanceof InitPacketDeclaration)) {
-                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getCanonicalName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getCanonicalName() + "]");
+                        throw new ProtocolException(address.toString() + ": Only " + InitPacketDeclaration.class.getTypeName() + " may be received during the PRE_INITIALIZATION stage: [" + packet.getClass().getTypeName() + "]");
                     } else if (state == CLOSING && !(packet instanceof PacketDisconnectUnderstood)) {
                         forward.close(); // Suppress other packets during the CLOSING stage
                     } else {
@@ -256,7 +256,7 @@ public class SubDataClient extends DataClient implements SubDataSender {
             };
             // Step 2 // Write the Packet Metadata
             HashMap<Class<? extends PacketOut>, Integer> pOut = (state.asInt() >= POST_INITIALIZATION.asInt())?protocol.pOut:Util.reflect(InitialProtocol.class.getDeclaredField("pOut"), null);
-            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getCanonicalName());
+            if (!pOut.keySet().contains(next.getClass())) throw new IllegalMessageException(address.toString() + ": Could not find ID for packet: " + next.getClass().getTypeName());
 
             data.write(UnsignedData.unsign((long) pOut.get(next.getClass()), 2), 0, 2);
             data.flush();

@@ -121,7 +121,7 @@ public class OutputStreamL1 extends OutputStream {
                 } else shutdown.run();
             }
         }
-        private long flushMBB() throws IOException {
+        private int flushMBB() throws IOException {
             int size = Math.min((int) Math.floor((double) stored / MBB), 256);
             int length = size * MBB;
             out.write('\u0013');
@@ -130,7 +130,7 @@ public class OutputStreamL1 extends OutputStream {
             cursor += length;
             return length;
         }
-        private long flushKBB() throws IOException {
+        private int flushKBB() throws IOException {
             int size = Math.min((int) Math.floor((double) stored / KBB), 256);
             int length = size * KBB;
             out.write('\u0012');
@@ -139,7 +139,7 @@ public class OutputStreamL1 extends OutputStream {
             cursor += length;
             return length;
         }
-        private long flushBB() throws IOException {
+        private int flushBB() throws IOException {
             int size = Math.min((int) Math.floor((double) stored /  BB), 256);
             int length = size *  BB;
             out.write('\u0011');
@@ -148,7 +148,7 @@ public class OutputStreamL1 extends OutputStream {
             cursor += length;
             return length;
         }
-        private long flushByte() throws IOException {
+        private int flushByte() throws IOException {
             out.write('\u0010');
             out.write(block[cursor++]);
             return 1;
